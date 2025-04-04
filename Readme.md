@@ -19,5 +19,4 @@
 
 ## Mapa da API:
 
-![MAPA](C:\Users\felip\OneDrive\Desktop\1619c877-97eb-40d3-a467-6fd793a85c62.png)
-    
+![Image](https://github.com/user-attachments/assets/3e0414fd-f6f7-460f-8543-6a2b59261a47)    
