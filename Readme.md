@@ -39,11 +39,6 @@
         - POST: /
         - PUT: /{id}
         - DELETE: /{id}
-  - *Nível Admin*
-    - URL/admin
-      - GET: /report
-
-
 
 
 ## Mapa da API:
