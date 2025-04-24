@@ -1,0 +1,157 @@
+from flask import Blueprint, request, jsonify
+import psycopg2
+from psycopg2 import sql
+
+
+def teste():
+    try:
+        meu_banco = "financeiro"
+
+        # Conectar ao banco de dados padrão (geralmente 'postgres') para realizar a consulta
+        conn = psycopg2.connect(
+            host='localhost',
+            database='postgres',
+            user='postgres',
+            password='postgres',
+            client_encoding='UTF8'
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
+
+        # Verificar se o banco existe
+        query = sql.SQL("SELECT 1 FROM pg_catalog.pg_database WHERE datname = %s")
+        cursor.execute(query, [meu_banco])
+        banco_existe = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if banco_existe:
+            print(f"O banco de dados '{meu_banco}' já existe.")
+            return True
+        else:
+            print(f"O banco de dados '{meu_banco}' não existe. Criando...")
+            criar_banco(meu_banco)
+            # Após a criação do banco, criar as tabelas
+            criar_tabelas(meu_banco)
+            print(f"Banco '{meu_banco}' criado com sucesso e tabelas configuradas.")
+            return True
+
+    except Exception as e:
+        print(f"Erro ao verificar o banco de dados: {e}")
+        return False
+
+
+def criar_banco(nome_banco):
+    try:
+        # Conecta ao banco 'postgres' para criar um novo banco
+        conn = psycopg2.connect(
+            host='localhost',
+            database='postgres',
+            user='postgres',
+            password='postgres',
+            client_encoding='UTF8'
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
+
+        # Cria o banco de dados
+        cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(nome_banco)))
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        print(f"Erro ao criar o banco '{nome_banco}': {e}")
+
+def criar_tabelas(nome_banco):
+    try:
+        # Conectar ao banco de dados 'financeiro' (criado anteriormente)
+        conn = psycopg2.connect(
+            host='localhost',
+            database=nome_banco,  # Aqui, passamos o nome do banco 'financeiro' que foi criado
+            user='postgres',
+            password='postgres',
+            client_encoding='UTF8'
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
+
+        # Definir as instruções SQL para criar as tabelas
+        query_tabelas = [
+            """CREATE TABLE IF NOT EXISTS usuario (
+                id SERIAL PRIMARY KEY,
+                nome VARCHAR(255),
+                email VARCHAR(255),
+                senha VARCHAR(255),
+                data_nasc DATE,
+                cpf VARCHAR(14)
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS recorrencia (
+                id SERIAL PRIMARY KEY,
+                periodo VARCHAR(255)
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS categoria_transacao (
+                id SERIAL PRIMARY KEY,
+                categoria VARCHAR(255)
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS tipo_transacao (
+                id SERIAL PRIMARY KEY,
+                tipo VARCHAR(255)
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS cartao (
+                id SERIAL PRIMARY KEY,
+                limite INT,
+                venc_fatura DATE
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS conta (
+                id SERIAL PRIMARY KEY,
+                nome_banco VARCHAR(255),
+                saldo_inicial NUMERIC(10,2),
+                fk_id_cartao INT,
+                fk_id_usuario INT,
+                CONSTRAINT fk_id_cartao FOREIGN KEY (fk_id_cartao) REFERENCES cartao(id),
+                CONSTRAINT fk_id_usuario FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id)
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS limite (
+                id SERIAL PRIMARY KEY,
+                titulo VARCHAR(255),
+                valor NUMERIC(7,2),
+                fk_id_usuario INT,
+                fk_id_recorrencia INT,
+                fk_id_categoria_transacao INT,
+                CONSTRAINT fk_id_categoria_transacao FOREIGN KEY (fk_id_categoria_transacao) REFERENCES categoria_transacao(id),
+                CONSTRAINT fk_usuario FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id)
+            );""",
+
+            """CREATE TABLE IF NOT EXISTS transacao (
+                id SERIAL PRIMARY KEY,
+                descricao VARCHAR(255),
+                valor NUMERIC(7,2),
+                data DATE,
+                fk_id_usuario INT,
+                fk_id_tipo_transacao INT,
+                fk_id_conta INT,
+                fk_id_categoria_transacao INT,
+                CONSTRAINT fk_id_categoria_transacao_nessa FOREIGN KEY (fk_id_categoria_transacao) REFERENCES categoria_transacao(id),
+                CONSTRAINT fk_id_tipo_transacao_nessa FOREIGN KEY (fk_id_tipo_transacao) REFERENCES tipo_transacao(id),
+                CONSTRAINT fk_usuario_nessa FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id),
+                CONSTRAINT fk_id_conta_nessa FOREIGN KEY (fk_id_conta) REFERENCES conta(id)
+            );"""
+        ]
+
+        # Criar as tabelas
+        for query in query_tabelas:
+            cursor.execute(query)
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        print(f"Erro ao criar as tabelas: {e}")

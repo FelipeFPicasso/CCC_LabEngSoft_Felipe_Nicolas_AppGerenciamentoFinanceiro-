@@ -4,6 +4,7 @@ import datetime
 
 usuario_bp = Blueprint('usuario', __name__)
 
+
 @usuario_bp.route('/usuarios', methods=['POST'])
 def criar_usuario():
     dados = request.get_json()
@@ -22,9 +23,15 @@ def criar_usuario():
         return jsonify({'erro': 'data_nasc deve estar no formato YYYY-MM-DD'}), 400
 
     novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
-    Usuario.adicionar(novo_usuario)
-    return jsonify({'mensagem': 'Usuário criado com sucesso', 'usuario': novo_usuario.to_dict()}), 201
+    usuario_cadastrado = Usuario.adicionar(novo_usuario)
+
+    if usuario_cadastrado:
+        return jsonify({'mensagem': 'Usuário criado com sucesso', 'usuario': usuario_cadastrado.to_dict()}), 201
+    else:
+        return jsonify({'erro': 'Erro ao criar usuário'}), 500
+
 
 @usuario_bp.route('/usuarios', methods=['GET'])
 def listar_usuarios():
-    return jsonify(Usuario.listar_todos()), 200
+    usuarios = Usuario.listar_todos()
+    return jsonify(usuarios), 200
