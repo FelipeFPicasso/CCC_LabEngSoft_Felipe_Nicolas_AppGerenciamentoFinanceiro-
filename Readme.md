@@ -17,8 +17,8 @@
 
 - git clone https://github.com/FelipeFPicasso/AppGerenciamentoFinanceiro.git
 - pip install flask
-- pip install psycopg2
 - pip install psycopg2-binary
+- pip install sqlalchemy
 
 ## Estrutura dos EndPoints API:
 
