@@ -35,3 +35,12 @@ def criar_usuario():
 def listar_usuarios():
     usuarios = Usuario.listar_todos()
     return jsonify(usuarios), 200
+
+@usuario_bp.route('/usuarios/<int:usuario_id>', methods=['GET'])
+def buscar_usuario(usuario_id):
+    usuario = Usuario.buscar_por_id(usuario_id)
+    if usuario:
+        return jsonify(usuario), 200
+    else:
+        return jsonify({'erro': 'Usuário não encontrado'}), 404
+

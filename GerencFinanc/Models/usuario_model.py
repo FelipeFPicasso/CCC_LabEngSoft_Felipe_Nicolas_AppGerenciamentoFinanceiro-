@@ -73,3 +73,34 @@ class Usuario:
         except Exception as e:
             print(f"Erro ao listar usuários: {e}")
             return []
+
+
+    @classmethod
+    def buscar_por_id(cls, usuario_id):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+
+            query = sql.SQL("SELECT * FROM usuario WHERE id = %s")
+            cursor.execute(query, [usuario_id])
+
+            resultado = cursor.fetchone()
+
+            cursor.close()
+            conn.close()
+
+            if resultado:
+                return {
+                    'id': resultado[0],
+                    'nome': resultado[1],
+                    'email': resultado[2],
+                    'senha': resultado[3],
+                    'data_nasc': resultado[4],
+                    'cpf': resultado[5]
+                }
+            else:
+                return None
+        except Exception as e:
+            print(f"Erro ao buscar usuário por ID: {e}")
+            return None
+

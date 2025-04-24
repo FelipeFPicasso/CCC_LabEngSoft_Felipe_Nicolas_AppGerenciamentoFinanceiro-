@@ -72,7 +72,6 @@ def criar_banco(nome_banco):
 
 def criar_tabelas(nome_banco):
     try:
-        # Conecta no banco de dados 'financeiro'
         conn = psycopg2.connect(
             host='localhost',
             database=nome_banco,
@@ -83,7 +82,7 @@ def criar_tabelas(nome_banco):
         conn.autocommit = True
         cursor = conn.cursor()
 
-        # Definir as instruções SQL para criar as tabelas
+        # Criação das tabelas
         query_tabelas = [
             """CREATE TABLE IF NOT EXISTS usuario (
                 id SERIAL PRIMARY KEY,
@@ -152,9 +151,36 @@ def criar_tabelas(nome_banco):
             );"""
         ]
 
-        # Criar as tabelas
         for query in query_tabelas:
             cursor.execute(query)
+
+        # Inserção dos registros fixos
+        # Recorrência
+        cursor.execute("SELECT COUNT(*) FROM recorrencia;")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO recorrencia (periodo) VALUES 
+                ('Diário'), ('Semanal'), ('Mensal'),
+                ('Semestral'), ('Anual');
+            """)
+
+        # Categoria de transação
+        cursor.execute("SELECT COUNT(*) FROM categoria_transacao;")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO categoria_transacao (categoria) VALUES
+                ('Alimentação'), ('Transporte'), ('Lazer'), ('Saúde'),
+                ('Educação'), ('Moradia'), ('Investimentos'),
+                ('Assinaturas'), ('Compras');
+            """)
+
+        # Tipo de transação
+        cursor.execute("SELECT COUNT(*) FROM tipo_transacao;")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO tipo_transacao (tipo) VALUES
+                ('Receita'), ('Despesa');
+            """)
 
         cursor.close()
         conn.close()
