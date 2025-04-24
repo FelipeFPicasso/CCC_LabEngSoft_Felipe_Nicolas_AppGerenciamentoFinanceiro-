@@ -1,0 +1,5 @@
+Adicionar uma validação se o Banco "financeiro" foi criado
+
+Adicionar a funcao onde se caso o Banco "financeiro" nao estiver sido criado ele ira ser criado
+
+Adicionar dentro da funcao onde o Banco sera criado as Tabelas

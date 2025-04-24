@@ -1,6 +1,6 @@
 from flask import Flask
 from Controllers.usuario_controller import usuario_bp
-from migrate import teste, criar_banco
+from migrate import validar_estrutura_db
 
 app = Flask(__name__)
 
@@ -12,5 +12,5 @@ app.register_blueprint(usuario_bp)
 #    return 'Esse é um app de gerenciamento financeiro'
 
 if __name__ == '__main__':
-    teste()
-    app.run(debug=True, port=8000, host='localhost')
+    validar_estrutura_db()
+    app.run(debug=False, port=8000, host='localhost')
