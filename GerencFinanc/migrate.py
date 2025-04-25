@@ -2,21 +2,16 @@ from flask import Blueprint, request, jsonify
 import psycopg2
 from psycopg2 import sql
 from sqlalchemy import false
+from seeder import seed_registros_fixos
 
-
-
+meu_banco = "financeiro"
 
 def validar_estrutura_db():
-
     try:
-
-        meu_banco = "financeiro"
         validar_database(meu_banco)
-        criar_tabelas(meu_banco)  # Garante que as tabelas estejam lá
-
+        criar_tabelas(meu_banco)
     except Exception as e:
         print(f"Erro ao validar estrutura do db: {e}")
-
 
 def validar_database(meu_banco):
     try:
@@ -37,7 +32,7 @@ def validar_database(meu_banco):
         conn.close()
 
         if banco_existe:
-            print("banco existe")
+            print("Banco existe")
         else:
             criar_banco(meu_banco)
             print("Banco de dados criado com sucesso")
@@ -45,8 +40,7 @@ def validar_database(meu_banco):
     except Exception as e:
         print(f"Erro ao verificar o banco de dados: {e}")
 
-
-def criar_banco(nome_banco):
+def criar_banco(meu_banco):
     try:
         conn = psycopg2.connect(
             host='localhost',
@@ -58,23 +52,21 @@ def criar_banco(nome_banco):
         conn.autocommit = True
         cursor = conn.cursor()
 
-        cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(nome_banco)))
+        cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(meu_banco)))
 
         cursor.close()
         conn.close()
 
-        # Criar as tabelas após o banco ser criado
-        criar_tabelas(nome_banco)
+        criar_tabelas(meu_banco)
 
     except Exception as e:
-        print(f"Erro ao criar o banco '{nome_banco}': {e}")
+        print(f"Erro ao criar o banco '{meu_banco}': {e}")
 
-
-def criar_tabelas(nome_banco):
+def criar_tabelas(meu_banco):
     try:
         conn = psycopg2.connect(
             host='localhost',
-            database=nome_banco,
+            database=meu_banco,
             user='postgres',
             password='postgres',
             client_encoding='UTF8'
@@ -82,7 +74,6 @@ def criar_tabelas(nome_banco):
         conn.autocommit = True
         cursor = conn.cursor()
 
-        # Criação das tabelas
         query_tabelas = [
             """CREATE TABLE IF NOT EXISTS usuario (
                 id SERIAL PRIMARY KEY,
@@ -92,28 +83,23 @@ def criar_tabelas(nome_banco):
                 data_nasc DATE,
                 cpf VARCHAR(14)
             );""",
-
             """CREATE TABLE IF NOT EXISTS recorrencia (
                 id SERIAL PRIMARY KEY,
                 periodo VARCHAR(255)
             );""",
-
             """CREATE TABLE IF NOT EXISTS categoria_transacao (
                 id SERIAL PRIMARY KEY,
                 categoria VARCHAR(255)
             );""",
-
             """CREATE TABLE IF NOT EXISTS tipo_transacao (
                 id SERIAL PRIMARY KEY,
                 tipo VARCHAR(255)
             );""",
-
             """CREATE TABLE IF NOT EXISTS cartao (
                 id SERIAL PRIMARY KEY,
                 limite INT,
                 venc_fatura DATE
             );""",
-
             """CREATE TABLE IF NOT EXISTS conta (
                 id SERIAL PRIMARY KEY,
                 nome_banco VARCHAR(255),
@@ -123,7 +109,6 @@ def criar_tabelas(nome_banco):
                 CONSTRAINT fk_id_cartao FOREIGN KEY (fk_id_cartao) REFERENCES cartao(id),
                 CONSTRAINT fk_id_usuario FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id)
             );""",
-
             """CREATE TABLE IF NOT EXISTS limite (
                 id SERIAL PRIMARY KEY,
                 titulo VARCHAR(255),
@@ -134,7 +119,6 @@ def criar_tabelas(nome_banco):
                 CONSTRAINT fk_id_categoria_transacao FOREIGN KEY (fk_id_categoria_transacao) REFERENCES categoria_transacao(id),
                 CONSTRAINT fk_usuario FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id)
             );""",
-
             """CREATE TABLE IF NOT EXISTS transacao (
                 id SERIAL PRIMARY KEY,
                 descricao VARCHAR(255),
@@ -154,33 +138,7 @@ def criar_tabelas(nome_banco):
         for query in query_tabelas:
             cursor.execute(query)
 
-        # Inserção dos registros fixos
-        # Recorrência
-        cursor.execute("SELECT COUNT(*) FROM recorrencia;")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("""
-                INSERT INTO recorrencia (periodo) VALUES 
-                ('Diário'), ('Semanal'), ('Mensal'),
-                ('Semestral'), ('Anual');
-            """)
-
-        # Categoria de transação
-        cursor.execute("SELECT COUNT(*) FROM categoria_transacao;")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("""
-                INSERT INTO categoria_transacao (categoria) VALUES
-                ('Alimentação'), ('Transporte'), ('Lazer'), ('Saúde'),
-                ('Educação'), ('Moradia'), ('Investimentos'),
-                ('Assinaturas'), ('Compras');
-            """)
-
-        # Tipo de transação
-        cursor.execute("SELECT COUNT(*) FROM tipo_transacao;")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("""
-                INSERT INTO tipo_transacao (tipo) VALUES
-                ('Receita'), ('Despesa');
-            """)
+        seed_registros_fixos(meu_banco)
 
         cursor.close()
         conn.close()
