@@ -1,9 +1,8 @@
 from flask import Blueprint, request, jsonify
-from Models.usuario_model import Usuario
 import datetime
+from Models.usuario_model import Usuario
 
 usuario_bp = Blueprint('usuario', __name__)
-
 
 @usuario_bp.route('/usuarios', methods=['POST'])
 def criar_usuario():
@@ -26,21 +25,6 @@ def criar_usuario():
     usuario_cadastrado = Usuario.adicionar(novo_usuario)
 
     if usuario_cadastrado:
-        return jsonify({'mensagem': 'Usuário criado com sucesso', 'usuario': usuario_cadastrado.to_dict()}), 201
+        return jsonify({'mensagem': 'Usuário criado com sucesso'}), 201
     else:
         return jsonify({'erro': 'Erro ao criar usuário'}), 500
-
-
-@usuario_bp.route('/usuarios', methods=['GET'])
-def listar_usuarios():
-    usuarios = Usuario.listar_todos()
-    return jsonify(usuarios), 200
-
-@usuario_bp.route('/usuarios/<int:usuario_id>', methods=['GET'])
-def buscar_usuario(usuario_id):
-    usuario = Usuario.buscar_por_id(usuario_id)
-    if usuario:
-        return jsonify(usuario), 200
-    else:
-        return jsonify({'erro': 'Usuário não encontrado'}), 404
-

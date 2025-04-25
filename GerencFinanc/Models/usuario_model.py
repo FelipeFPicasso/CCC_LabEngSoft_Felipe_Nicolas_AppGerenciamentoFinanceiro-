@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2 import sql
+import bcrypt
 
 class Usuario:
     # Conexão com o banco de dados
@@ -7,7 +8,7 @@ class Usuario:
     def _conectar():
         return psycopg2.connect(
             host='localhost',
-            database='financeiro',  # Conectar ao banco de dados 'financeiro'
+            database='financeiro',
             user='postgres',
             password='postgres',
             client_encoding='UTF8'
@@ -22,6 +23,7 @@ class Usuario:
 
     def to_dict(self):
         return {
+            'id': self.id,
             'nome': self.nome,
             'email': self.email,
             'senha': self.senha,
@@ -29,17 +31,19 @@ class Usuario:
             'cpf': self.cpf
         }
 
+
     @classmethod
     def adicionar(cls, usuario):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = sql.SQL("""
-                INSERT INTO usuario (nome, email, senha, data_nasc, cpf)
-                VALUES (%s, %s, %s, %s, %s) RETURNING id
-            """)
-            cursor.execute(query, (usuario.nome, usuario.email, usuario.senha, usuario.data_nasc, usuario.cpf))
+            # Gerar o hash da senha com o bcrypt
+            hashed_senha = bcrypt.hashpw(usuario.senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+            query = sql.SQL("""INSERT INTO usuario (nome, email, senha, data_nasc, cpf)
+                               VALUES (%s, %s, %s, %s, %s) RETURNING id""")
+            cursor.execute(query, (usuario.nome, usuario.email, hashed_senha, usuario.data_nasc, usuario.cpf))
 
             # Pegando o id gerado automaticamente após o insert
             usuario_id = cursor.fetchone()[0]
@@ -50,6 +54,7 @@ class Usuario:
 
             # Atualizando o objeto com o id gerado
             usuario.id = usuario_id
+            usuario.senha = hashed_senha  # Armazenando a senha como string do hash
             return usuario
         except Exception as e:
             print(f"Erro ao adicionar usuário: {e}")
@@ -74,33 +79,30 @@ class Usuario:
             print(f"Erro ao listar usuários: {e}")
             return []
 
-
     @classmethod
-    def buscar_por_id(cls, usuario_id):
+    def buscar_por_email(cls, email):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = sql.SQL("SELECT * FROM usuario WHERE id = %s")
-            cursor.execute(query, [usuario_id])
+            query = sql.SQL("SELECT * FROM usuario WHERE email = %s")
+            cursor.execute(query, (email,))
 
-            resultado = cursor.fetchone()
+            usuario = cursor.fetchone()
 
             cursor.close()
             conn.close()
 
-            if resultado:
+            if usuario:
                 return {
-                    'id': resultado[0],
-                    'nome': resultado[1],
-                    'email': resultado[2],
-                    'senha': resultado[3],
-                    'data_nasc': resultado[4],
-                    'cpf': resultado[5]
+                    'id': usuario[0],
+                    'nome': usuario[1],
+                    'email': usuario[2],
+                    'senha': usuario[3],  # A senha vai ser retornada com hash
+                    'data_nasc': usuario[4],
+                    'cpf': usuario[5]
                 }
-            else:
-                return None
-        except Exception as e:
-            print(f"Erro ao buscar usuário por ID: {e}")
             return None
-
+        except Exception as e:
+            print(f"Erro ao buscar usuário por email: {e}")
+            return None
