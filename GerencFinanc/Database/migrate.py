@@ -1,27 +1,21 @@
 from flask import Blueprint, request, jsonify
 import psycopg2
 from psycopg2 import sql
-from sqlalchemy import false
-from seeder import seed_registros_fixos
+from Database.seeder import seed_registros_fixos
+from Database.conexao import conectar_postgres, conectar_financeiro
 
 meu_banco = "financeiro"
 
 def validar_estrutura_db():
     try:
         validar_database(meu_banco)
-        criar_tabelas(meu_banco)
+        criar_tabelas()
     except Exception as e:
         print(f"Erro ao validar estrutura do db: {e}")
 
 def validar_database(meu_banco):
     try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database='postgres',
-            user='postgres',
-            password='postgres',
-            client_encoding='UTF8'
-        )
+        conn = conectar_postgres()
         conn.autocommit = True
         cursor = conn.cursor()
 
@@ -42,13 +36,7 @@ def validar_database(meu_banco):
 
 def criar_banco(meu_banco):
     try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database='postgres',
-            user='postgres',
-            password='postgres',
-            client_encoding='UTF8'
-        )
+        conn = conectar_postgres()
         conn.autocommit = True
         cursor = conn.cursor()
 
@@ -57,20 +45,15 @@ def criar_banco(meu_banco):
         cursor.close()
         conn.close()
 
-        criar_tabelas(meu_banco)
+
+        criar_tabelas()
 
     except Exception as e:
         print(f"Erro ao criar o banco '{meu_banco}': {e}")
 
-def criar_tabelas(meu_banco):
+def criar_tabelas():
     try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database=meu_banco,
-            user='postgres',
-            password='postgres',
-            client_encoding='UTF8'
-        )
+        conn = conectar_financeiro()
         conn.autocommit = True
         cursor = conn.cursor()
 

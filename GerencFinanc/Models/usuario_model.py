@@ -1,18 +1,13 @@
 import psycopg2
 from psycopg2 import sql
 import bcrypt
+from Database.conexao import conectar_financeiro
 
 class Usuario:
     # Conexão com o banco de dados
     @staticmethod
     def _conectar():
-        return psycopg2.connect(
-            host='localhost',
-            database='financeiro',
-            user='postgres',
-            password='postgres',
-            client_encoding='UTF8'
-        )
+        return conectar_financeiro()
 
     def __init__(self, nome, email, senha, data_nasc, cpf):
         self.nome = nome

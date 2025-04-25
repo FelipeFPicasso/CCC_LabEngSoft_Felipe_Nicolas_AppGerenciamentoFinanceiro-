@@ -1,7 +1,7 @@
 from flask import Flask
 from Controllers.usuario_controller import usuario_bp
 from Controllers.login_controller import login_bp
-from migrate import validar_estrutura_db
+from Database.migrate import validar_estrutura_db
 
 app = Flask(__name__)
 
