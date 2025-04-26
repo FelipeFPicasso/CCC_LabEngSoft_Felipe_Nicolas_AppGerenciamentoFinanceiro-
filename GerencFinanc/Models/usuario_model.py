@@ -69,7 +69,7 @@ class Usuario:
             cursor.close()
             conn.close()
 
-            return [{'id': u[0], 'nome': u[1], 'email': u[2], 'senha': u[3], 'data_nasc': u[4], 'cpf': u[5]} for u in usuarios]
+            return [{'id': u[0], 'nome': u[1], 'email': u[2], 'senha': u[3], 'data_nasc': u[4].strftime('%Y-%m-%d'), 'cpf': u[5]} for u in usuarios]
         except Exception as e:
             print(f"Erro ao listar usuários: {e}")
             return []

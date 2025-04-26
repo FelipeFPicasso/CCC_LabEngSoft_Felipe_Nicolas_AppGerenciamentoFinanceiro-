@@ -1,14 +1,11 @@
 import psycopg2
 
+from Database.conexao import conectar_financeiro
+
+
 def seed_registros_fixos(meu_banco):
     try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database='financeiro',
-            user='postgres',
-            password='postgres',
-            client_encoding='UTF8'
-        )
+        conn = conectar_financeiro()
         conn.autocommit = True
         cursor = conn.cursor()
 
