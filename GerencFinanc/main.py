@@ -11,4 +11,4 @@ app.register_blueprint(login_bp)
 
 if __name__ == '__main__':
     validar_estrutura_db()
-    app.run(debug=False, port=9090, host='localhost')
+    app.run(debug=False, port=8000, host='localhost')
