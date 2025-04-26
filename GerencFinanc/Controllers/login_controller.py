@@ -25,7 +25,7 @@ def login():
         # Gerar o token JWT
         payload = {
             'user_id': usuario['id'],
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            'exp': datetime.datetime + datetime.timedelta(hours=1)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
