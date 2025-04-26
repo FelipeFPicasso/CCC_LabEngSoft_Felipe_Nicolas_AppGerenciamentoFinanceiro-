@@ -8,7 +8,7 @@ import jwt
 login_bp = Blueprint('login', __name__)
 
 # Configuração da chave secreta para o JWT
-SECRET_KEY = 'sua_chave_secreta'  # Em produção, use uma chave mais segura!
+SECRET_KEY = 'sua_chave_secreta'
 
 @login_bp.route('/login', methods=['POST'])
 def login():
