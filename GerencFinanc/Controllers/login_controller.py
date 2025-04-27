@@ -16,23 +16,31 @@ def login():
     email = dados.get('email')
     senha = dados.get('senha')
 
+    # Verifica se o email e a senha foram fornecidos
     if not (email and senha):
         return jsonify({'erro': 'Email e senha são obrigatórios'}), 400
 
+    # Busca o usuário pelo email
     usuario = Usuario.buscar_por_email(email)
 
+    # Verifica se o usuário existe e se a senha está correta
     if usuario and verificar_senha(senha, usuario['senha']):
-        # Gerar o token JWT
+        # Gerar o token JWT com o usuario_id e data de expiração
         payload = {
-            'user_id': usuario['id'],
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            'usuario_id': usuario['id'],  # Alterado para 'usuario_id' para ser consistente com o token
+            'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(weeks=1)  # Token expira em 7 dias
         }
+
+        # Codifica o token para uma string
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
-        return jsonify({'token': token}), 200
+        # Exemplo de resposta com o token para o cliente
+        bearer_token = f"Bearer {token}"
+
+        return jsonify({'token': bearer_token}), 200
+
     else:
         return jsonify({'erro': 'Email ou senha inválidos'}), 401
-
 
 def verificar_senha(senha_fornecida, hash_armazenado):
     """Verifica se a senha fornecida corresponde ao hash armazenado"""
