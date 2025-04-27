@@ -26,7 +26,6 @@ class Usuario:
             'cpf': self.cpf
         }
 
-
     @classmethod
     def adicionar(cls, usuario):
         try:
@@ -101,3 +100,20 @@ class Usuario:
         except Exception as e:
             print(f"Erro ao buscar usuário por email: {e}")
             return None
+        
+    @classmethod
+    def deletar(cls, id_usuario):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+            query = sql.SQL("DELETE FROM usuario WHERE id = %s")
+            cursor.execute(query, (id_usuario,))
+            conn.commit()
+            sucesso = cursor.rowcount > 0
+            cursor.close()
+            conn.close()
+            return sucesso
+        except Exception as e:
+            print(f"Erro ao deletar usuário: {e}")
+            return False
+

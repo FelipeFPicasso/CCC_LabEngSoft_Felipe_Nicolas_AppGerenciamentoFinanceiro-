@@ -4,6 +4,10 @@ from Models.usuario_model import Usuario
 
 usuario_bp = Blueprint('usuario', __name__)
 
+def busca_por_id(id_usuario):
+    todos = Usuario.listar_todos()
+    return next((u for u in todos if u['id'] == id_usuario), None)
+
 @usuario_bp.route('/usuarios', methods=['POST'])
 def criar_usuario():
     dados = request.get_json()
@@ -46,9 +50,20 @@ def listar_usuarios():
 
 @usuario_bp.route('/usuarios/<int:id_usuario>', methods=['GET'])
 def buscar_usuario_por_id(id_usuario):
-    todos = Usuario.listar_todos()
-    usuario = next((u for u in todos if u['id'] == id_usuario), None)
+    usuario = busca_por_id(id_usuario)
 
     if usuario:
         return jsonify(usuario), 200
     return jsonify({'erro': 'Usuário não encontrado'}), 404
+
+@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['PUT'])
+def atualizar_usuario(id_usuario):
+    usuario = busca_por_id(id_usuario)
+
+@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['DELETE'])
+def excluir_usuario(id_usuario):
+
+    if Usuario.deletar(id_usuario):
+        return jsonify({'mensagem' : 'Usuário excluído com sucesso'}), 200
+    else:
+        return jsonify({'erro': 'Usuário não encontrado'}), 404
