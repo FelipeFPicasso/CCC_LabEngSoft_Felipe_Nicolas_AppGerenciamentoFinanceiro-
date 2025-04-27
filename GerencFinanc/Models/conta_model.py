@@ -47,6 +47,30 @@ class Conta:
             return None
 
     @classmethod
+    def listar_todas(cls):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM conta"
+            cursor.execute(query)
+            contas_data = cursor.fetchall()
+
+            contas = []
+            for c in contas_data:
+                conta = Conta(c[1], c[2], c[3], c[4])  # Ajustado para usar fk_id_usuario e fk_id_cartao
+                conta.id = c[0]
+                contas.append(conta)
+
+            cursor.close()
+            conn.close()
+
+            return contas
+        except Exception as e:
+            print(f"Erro ao listar todas as contas: {e}")
+            return []
+
+    @classmethod
     def buscar_por_id(cls, id_conta):
         try:
             conn = cls._conectar()
@@ -67,3 +91,27 @@ class Conta:
         except Exception as e:
             print(f"Erro ao buscar conta: {e}")
             return None
+
+    @classmethod
+    def listar_por_usuario(cls, id_usuario):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+
+            query = sql.SQL("SELECT * FROM conta WHERE fk_id_usuario = %s")
+            cursor.execute(query, (id_usuario,))
+            contas_data = cursor.fetchall()
+
+            contas = []
+            for c in contas_data:
+                conta = Conta(c[1], c[2], c[3], c[4])  # Ajustado para usar fk_id_usuario e fk_id_cartao
+                conta.id = c[0]
+                contas.append(conta)
+
+            cursor.close()
+            conn.close()
+
+            return contas
+        except Exception as e:
+            print(f"Erro ao listar contas por usuário: {e}")
+            return []

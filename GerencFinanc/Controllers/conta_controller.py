@@ -4,6 +4,7 @@ from Utils.auth import token_required  # Importando o decorator de autenticaçã
 
 conta_bp = Blueprint('conta', __name__)
 
+# POST: Criar uma nova conta
 @conta_bp.route('/conta', methods=['POST'])
 @token_required  # Garantir que o usuário esteja autenticado
 def criar_conta(usuario_id):
@@ -24,3 +25,36 @@ def criar_conta(usuario_id):
         return jsonify({'mensagem': 'Conta criada com sucesso', 'conta': conta_adicionada.to_dict()}), 201
     else:
         return jsonify({'erro': 'Erro ao criar conta'}), 500
+
+# GET: Listar todos os contas
+@conta_bp.route('/conta', methods=['GET'])
+def listar_contas():
+    try:
+        contas = Conta.listar_todas()
+        return jsonify({'contas': [conta.to_dict() for conta in contas]}), 200
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao listar contas: {str(e)}'}), 500
+
+# GET: Listar conta por ID
+@conta_bp.route('/conta/<int:id_conta>', methods=['GET'])
+def listar_conta_por_id(id_conta):
+    try:
+        conta = Conta.buscar_por_id(id_conta)
+        if conta:
+            return jsonify({'conta': conta.to_dict()}), 200
+        else:
+            return jsonify({'erro': 'Conta não encontrada'}), 404
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao buscar conta: {str(e)}'}), 500
+
+# GET: Listar contas do usuário pelo ID do usuário
+@conta_bp.route('/conta/usuario/<int:id_usuario>', methods=['GET'])
+def listar_contas_por_usuario(id_usuario):
+    try:
+        contas = Conta.listar_por_usuario(id_usuario)
+        if contas:
+            return jsonify({'contas': [conta.to_dict() for conta in contas]}), 200
+        else:
+            return jsonify({'erro': 'Nenhuma conta encontrada para este usuário'}), 404
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao listar contas do usuário: {str(e)}'}), 500
