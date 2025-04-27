@@ -107,3 +107,17 @@ class Cartao:
         except Exception as e:
             print(f"Erro ao buscar cartões do usuário: {e}")
             return []
+        
+    @classmethod
+    def deletar_por_id(cls, id_cartao):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM cartao WHERE id = %s", (id_cartao,))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Erro ao buscar cartão: {e}")
+            return False

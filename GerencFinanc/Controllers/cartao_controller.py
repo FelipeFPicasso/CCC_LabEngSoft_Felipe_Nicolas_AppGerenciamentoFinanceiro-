@@ -38,7 +38,7 @@ def listar_cartoes(usuario_id):
 # GET: Buscar cartão por ID
 @cartao_bp.route('/cartao/<int:id_cartao>', methods=['GET'])
 @token_required
-def buscar_cartao_por_id(usuario_id, id_cartao):
+def buscar_cartao_por_id(id_cartao):
     try:
         cartao = Cartao.buscar_por_id(id_cartao)
         if cartao:
@@ -65,3 +65,15 @@ def buscar_cartao_por_id(usuario_id, id_cartao):
 #            return jsonify({'erro': 'Nenhum cartão encontrado para este usuário'}), 404
 #    except Exception as e:
  #       return jsonify({'erro': f'Erro ao listar cartões do usuário: {str(e)}'}), 500
+
+#DELETE: deleta cartao por ID 
+@token_required
+@cartao_bp.route('/cartao/<int:id_cartao>', methods=['DELETE'])
+def deletar_cartao_por_id(id_cartao):
+    try:
+        if  Cartao.deletar_por_id(id_cartao):
+            return jsonify(f"Cartão de id {id_cartao} excluído com sucesso!"), 200
+        else:
+            return jsonify({'erro': 'Cartão não encontrado'}), 404
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao buscar cartão: {str(e)}'}), 500
