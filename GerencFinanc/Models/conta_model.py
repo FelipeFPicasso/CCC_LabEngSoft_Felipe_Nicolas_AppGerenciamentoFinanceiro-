@@ -7,17 +7,19 @@ class Conta:
     def _conectar():
         return conectar_financeiro()
 
-    def __init__(self, nome_banco, saldo_inicial, usuario_id):
+    def __init__(self, nome_banco, saldo_inicial, fk_id_usuario, fk_id_cartao):
         self.nome_banco = nome_banco
         self.saldo_inicial = saldo_inicial
-        self.usuario_id = usuario_id
+        self.fk_id_usuario = fk_id_usuario  # Nome alterado para fk_id_usuario
+        self.fk_id_cartao = fk_id_cartao  # Nome alterado para fk_id_cartao
 
     def to_dict(self):
         return {
             'id': self.id,
             'nome_banco': self.nome_banco,
             'saldo_inicial': self.saldo_inicial,
-            'usuario_id': self.usuario_id
+            'fk_id_usuario': self.fk_id_usuario,  # Retorna o campo com o nome correto no banco
+            'fk_id_cartao': self.fk_id_cartao  # Retorna o campo com o nome correto no banco
         }
 
     @classmethod
@@ -26,9 +28,11 @@ class Conta:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = sql.SQL("""INSERT INTO conta (nome_banco, saldo_inicial, usuario_id)
-                               VALUES (%s, %s, %s) RETURNING id""")
-            cursor.execute(query, (conta.nome_banco, conta.saldo_inicial, conta.usuario_id))
+            query = sql.SQL("""
+                INSERT INTO conta (nome_banco, saldo_inicial, fk_id_usuario, fk_id_cartao)
+                VALUES (%s, %s, %s, %s) RETURNING id
+            """)
+            cursor.execute(query, (conta.nome_banco, conta.saldo_inicial, conta.fk_id_usuario, conta.fk_id_cartao))
 
             conta_id = cursor.fetchone()[0]
             conn.commit()
@@ -56,7 +60,7 @@ class Conta:
             conn.close()
 
             if c:
-                conta = Conta(c[1], c[2], c[3])
+                conta = Conta(c[1], c[2], c[3], c[4])  # Ajustado para usar fk_id_usuario e fk_id_cartao
                 conta.id = c[0]
                 return conta
             return None
