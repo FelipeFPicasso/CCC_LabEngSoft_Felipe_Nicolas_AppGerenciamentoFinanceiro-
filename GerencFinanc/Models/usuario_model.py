@@ -102,17 +102,38 @@ class Usuario:
             return None
         
     @classmethod
+    def atualizar(cls, id_usuario, campos):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+            
+            set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
+            valores = list(campos.values()) + [id_usuario]
+
+            query = f"UPDATE usuario SET {set_clause} WHERE id = %s"
+            cursor.execute(query, valores)
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Erro ao atualizar usuário: {e}")
+            return False
+        
+    @classmethod
     def deletar(cls, id_usuario):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
+
             query = sql.SQL("DELETE FROM usuario WHERE id = %s")
+
             cursor.execute(query, (id_usuario,))
             conn.commit()
-            sucesso = cursor.rowcount > 0
             cursor.close()
             conn.close()
-            return sucesso
+            return True
         except Exception as e:
             print(f"Erro ao deletar usuário: {e}")
             return False
