@@ -48,23 +48,47 @@ def buscar_cartao_por_id(id_cartao):
     except Exception as e:
         return jsonify({'erro': f'Erro ao buscar cartão: {str(e)}'}), 500
 
-# GET: Buscar cartões do usuário
-#@cartao_bp.route('/cartao/usuario/<int:id_usuario>', methods=['GET'])
-#@token_required
-#def listar_cartoes_usuario(usuario_id, id_usuario):
-#    try:
-#        # Verifica se o ID do usuário do token corresponde ao ID passado na URL
-#        if usuario_id != id_usuario:
- #           return jsonify({'erro': 'Você não tem permissão para acessar os cartões deste usuário'}), 403
-#
- #       # Se os IDs baterem, buscamos os cartões desse usuário
-  #      cartoes = Cartao.buscar_por_usuario(id_usuario)
-#        if cartoes:
-#            return jsonify({'cartoes': [cartao.to_dict() for cartao in cartoes]}), 200
-#        else:
-#            return jsonify({'erro': 'Nenhum cartão encontrado para este usuário'}), 404
-#    except Exception as e:
- #       return jsonify({'erro': f'Erro ao listar cartões do usuário: {str(e)}'}), 500
+#GET: Buscar cartões do usuário
+@cartao_bp.route('/cartao/usuario/<int:id_usuario>', methods=['GET'])
+@token_required
+def listar_cartoes_usuario(usuario_id, id_usuario):
+    try:
+    # Verifica se o ID do usuário do token corresponde ao ID passado na URL
+        if usuario_id != id_usuario:
+            return jsonify({'erro': 'Você não tem permissão para acessar os cartões deste usuário'}), 403
+
+        # Se os IDs baterem, buscamos os cartões desse usuário
+        cartoes = Cartao.buscar_por_usuario(id_usuario)
+        if cartoes:
+            return jsonify({'cartoes': [cartao.to_dict() for cartao in cartoes]}), 200
+        else:
+            return jsonify({'erro': 'Nenhum cartão encontrado para este usuário'}), 404
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao listar cartões do usuário: {str(e)}'}), 500
+
+#PUT: atualiza cartao por ID
+@token_required
+@cartao_bp.route('/cartao/<int:id_cartao>', methods=['PUT'])
+def atualizar_cartao(id_cartao):
+    dados = request.get_json()
+
+    if not Cartao.buscar_por_id(id_cartao):
+        return jsonify({'erro': 'Cartao não encontrado'}), 404
+    
+    permitidos = {'limite', 'venc_fatura'}
+
+    campos = {
+        key: value for key, value in dados.items() 
+        if key in permitidos
+    }
+
+    if not campos:
+        return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400
+    
+    if Cartao.atualizar(id_cartao, campos):
+        return jsonify({'mensagem': f'Cartão {id_cartao} atualizado com sucesso'}), 200
+    else:
+        return jsonify({'erro': 'Erro ao atualizar cartão'}), 500
 
 #DELETE: deleta cartao por ID 
 @token_required
@@ -72,7 +96,7 @@ def buscar_cartao_por_id(id_cartao):
 def deletar_cartao_por_id(id_cartao):
     try:
         if  Cartao.deletar_por_id(id_cartao):
-            return jsonify(f"Cartão de id {id_cartao} excluído com sucesso!"), 200
+            return jsonify({'mensagem':f'Cartão de id {id_cartao} excluído com sucesso!'}), 200
         else:
             return jsonify({'erro': 'Cartão não encontrado'}), 404
     except Exception as e:

@@ -58,3 +58,38 @@ def listar_contas_por_usuario(id_usuario):
             return jsonify({'erro': 'Nenhuma conta encontrada para este usuário'}), 404
     except Exception as e:
         return jsonify({'erro': f'Erro ao listar contas do usuário: {str(e)}'}), 500
+    
+@token_required
+@conta_bp.route('/conta/<int:id_conta>', methods=['PUT'])
+def atualizar_conta(id_conta):
+    dados = request.get_json()
+
+    if not Conta.buscar_por_id(id_conta):
+        return jsonify({'erro': 'Conta não encontrada'}), 404
+    
+    permitidos = {'nome_banco', 'saldo_inicial'}
+
+    campos = {
+        key: value for key, value in dados.items() 
+        if key in permitidos
+    }
+
+    if not campos:
+        return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400
+    
+    if Conta.atualizar(id_conta, campos):
+        return jsonify({'mensagem': f'Conta {id_conta} atualizada com sucesso'}), 200
+    else:
+        return jsonify({'erro': 'Erro ao atualizar conta'}), 500
+
+# DELETE: Deletar conta por ID
+@conta_bp.route('/conta/<int:id_conta>', methods=['DELETE'])
+def deletar_conta_por_id(id_conta):
+    try:
+        conta = Conta.deletar_por_id(id_conta)
+        if conta:
+            return jsonify({'conta': conta.to_dict()}), 200
+        else:
+            return jsonify({'erro': 'Conta não encontrada'}), 404
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao buscar conta: {str(e)}'}), 500

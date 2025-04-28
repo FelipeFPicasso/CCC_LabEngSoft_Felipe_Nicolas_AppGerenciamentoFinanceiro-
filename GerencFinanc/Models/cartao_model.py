@@ -97,7 +97,7 @@ class Cartao:
 
             cartoes = []
             for resultado in resultados:
-                cartao = Cartao(resultado[1], resultado[2])
+                cartao = Cartao(resultado[2], resultado[3])
                 cartao.id = resultado[0]
                 cartoes.append(cartao)
 
@@ -109,15 +109,39 @@ class Cartao:
             return []
         
     @classmethod
+    def atualizar(cls, id_cartao, campos):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+            
+            set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
+            valores = list(campos.values()) + [id_cartao]
+
+            query = f"UPDATE cartao SET {set_clause} WHERE id = %s"
+            cursor.execute(query, valores)
+            success = cursor.rowcount
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return success > 0
+        except Exception as e:
+            print(f"Erro ao atualizar cartão: {e}")
+            return False
+        
+    @classmethod
     def deletar_por_id(cls, id_cartao):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
+            
             cursor.execute("DELETE FROM cartao WHERE id = %s", (id_cartao,))
+            success = cursor.rowcount
+            
             conn.commit()
             cursor.close()
             conn.close()
-            return True
+            return success > 0
         except Exception as e:
             print(f"Erro ao buscar cartão: {e}")
             return False

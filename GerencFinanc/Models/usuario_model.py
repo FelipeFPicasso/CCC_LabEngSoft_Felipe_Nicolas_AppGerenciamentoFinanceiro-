@@ -112,11 +112,12 @@ class Usuario:
 
             query = f"UPDATE usuario SET {set_clause} WHERE id = %s"
             cursor.execute(query, valores)
+            success = cursor.rowcount
 
             conn.commit()
             cursor.close()
             conn.close()
-            return True
+            return success > 0
         except Exception as e:
             print(f"Erro ao atualizar usuário: {e}")
             return False
@@ -127,13 +128,13 @@ class Usuario:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = sql.SQL("DELETE FROM usuario WHERE id = %s")
+            cursor.execute("DELETE FROM usuario WHERE id = %s", (id_usuario,))
+            success = cursor.rowcount
 
-            cursor.execute(query, (id_usuario,))
             conn.commit()
             cursor.close()
             conn.close()
-            return True
+            return success > 0
         except Exception as e:
             print(f"Erro ao deletar usuário: {e}")
             return False

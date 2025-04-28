@@ -115,3 +115,41 @@ class Conta:
         except Exception as e:
             print(f"Erro ao listar contas por usuário: {e}")
             return []
+        
+    @classmethod
+    def atualizar(cls, id_conta, campos):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+            
+            set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
+            valores = list(campos.values()) + [id_conta]
+
+            query = f"UPDATE conta SET {set_clause} WHERE id = %s"
+            cursor.execute(query, valores)
+            success = cursor.rowcount
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return success > 0
+        except Exception as e:
+            print(f"Erro ao atualizar conta: {e}")
+            return False
+        
+    @classmethod
+    def deletar_por_id(cls, id_conta):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM conta WHERE id = %s", (id_conta,))
+            success = cursor.rowcount
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return success > 0
+        except Exception as e:
+            print(f"Erro ao buscar conta: {e}")
+            return False
