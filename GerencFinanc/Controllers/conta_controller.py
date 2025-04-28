@@ -88,7 +88,7 @@ def deletar_conta_por_id(id_conta):
     try:
         conta = Conta.deletar_por_id(id_conta)
         if conta:
-            return jsonify({'conta': conta.to_dict()}), 200
+            return jsonify({'mensagem' : f'Cartão de id {id_conta} excluído com sucesso!'}), 200
         else:
             return jsonify({'erro': 'Conta não encontrada'}), 404
     except Exception as e:
