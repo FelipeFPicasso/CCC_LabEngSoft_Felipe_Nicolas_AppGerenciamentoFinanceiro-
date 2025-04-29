@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 import datetime
 from Models.usuario_model import Usuario
-import Utils.validations
 
 
 usuario_bp = Blueprint('usuario', __name__)
