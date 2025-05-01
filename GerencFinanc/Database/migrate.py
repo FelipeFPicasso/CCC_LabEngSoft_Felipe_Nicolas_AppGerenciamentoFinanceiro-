@@ -45,7 +45,6 @@ def criar_banco(meu_banco):
         cursor.close()
         conn.close()
 
-
         criar_tabelas()
 
     except Exception as e:
@@ -115,6 +114,15 @@ def criar_tabelas():
                 CONSTRAINT fk_id_tipo_transacao_nessa FOREIGN KEY (fk_id_tipo_transacao) REFERENCES tipo_transacao(id),
                 CONSTRAINT fk_usuario_nessa FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id),
                 CONSTRAINT fk_id_conta_nessa FOREIGN KEY (fk_id_conta) REFERENCES conta(id)
+            );""",
+            """CREATE TABLE IF NOT EXISTS saldo_atual (
+                id SERIAL PRIMARY KEY,
+                fk_id_usuario INT,
+                fk_id_conta INT,
+                saldo NUMERIC(10,2) DEFAULT 0,
+                CONSTRAINT fk_usuario_saldo FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id),
+                CONSTRAINT fk_conta_saldo FOREIGN KEY (fk_id_conta) REFERENCES conta(id),
+                UNIQUE(fk_id_usuario, fk_id_conta)
             );"""
         ]
 
@@ -123,8 +131,52 @@ def criar_tabelas():
 
         seed_registros_fixos(meu_banco)
 
+        criar_trigger_saldo_atual()
+
         cursor.close()
         conn.close()
 
     except Exception as e:
         print(f"Erro ao criar as tabelas: {e}")
+
+def criar_trigger_saldo_atual():
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+
+        comando_sql = """
+        CREATE OR REPLACE FUNCTION atualizar_saldo()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            -- Tenta atualizar o saldo existente
+            UPDATE saldo_atual
+            SET saldo = saldo + NEW.valor
+            WHERE fk_id_usuario = NEW.fk_id_usuario AND fk_id_conta = NEW.fk_id_conta;
+
+            -- Se nenhuma linha foi atualizada, insere um novo saldo
+            IF NOT FOUND THEN
+                INSERT INTO saldo_atual (fk_id_usuario, fk_id_conta, saldo)
+                VALUES (NEW.fk_id_usuario, NEW.fk_id_conta, NEW.valor);
+            END IF;
+
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_atualizar_saldo ON transacao;
+
+        CREATE TRIGGER trigger_atualizar_saldo
+        AFTER INSERT ON transacao
+        FOR EACH ROW
+        EXECUTE FUNCTION atualizar_saldo();
+        """
+
+        cursor.execute(comando_sql)
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        print("Trigger de saldo_atual criada com sucesso")
+    except Exception as e:
+        print(f"Erro ao criar trigger de saldo_atual: {e}")

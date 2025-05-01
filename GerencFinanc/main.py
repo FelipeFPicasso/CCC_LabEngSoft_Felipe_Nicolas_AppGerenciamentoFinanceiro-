@@ -6,6 +6,7 @@ from Controllers.cartao_controller import cartao_bp# <--- Importar o blueprint d
 from Database.migrate import validar_estrutura_db
 from Controllers.limite_controller import limite_bp
 from Controllers.transacao_controller import transacao_bp
+from Controllers.saldo_controller import saldo_bp
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -19,6 +20,7 @@ app.register_blueprint(conta_bp)  # <--- Registrar o blueprint da conta
 app.register_blueprint(cartao_bp)
 app.register_blueprint(limite_bp)
 app.register_blueprint(transacao_bp)
+app.register_blueprint(saldo_bp)
 
 if __name__ == '__main__':
     validar_estrutura_db()
