@@ -10,6 +10,18 @@ class Transacao:
         self.fk_id_conta = fk_id_conta
         self.fk_id_categoria_transacao = fk_id_categoria_transacao
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'descricao': self.descricao,
+            'valor': self.valor,
+            'data': self.data,
+            'fk_id_usuario': self.fk_id_usuario,
+            'fk_id_tipo_transacao': self.fk_id_tipo_transacao,
+            'fk_id_conta': self.fk_id_conta,
+            'fk_id_categoria_transacao': self.fk_id_categoria_transacao
+        }
+
     @classmethod
     def adicionar(cls, transacao):
         try:
@@ -37,4 +49,105 @@ class Transacao:
             return True
         except Exception as e:
             print(f"Erro ao adicionar transação: {e}")
+            return False
+        
+    @classmethod
+    def listar_todas(cls):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM transacao')
+            data = cursor.fetchall()
+
+            transacoes = []
+            for c in data:
+                transacao = Transacao(c[1],c[2],c[3],c[4],c[5],c[6],c[7])
+                transacao.id = c[0]
+                transacoes.append(transacao)
+
+            cursor.close()
+            conn.close()
+            return transacoes
+        except Exception as e:
+            print(f"Erro ao listar todas as transacoes: {e}")
+            return []
+        
+    @classmethod
+    def listar_por_usuario(cls, id_usuario):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            query = 'SELECT * FROM transacao WHERE fk_id_usuario = %s'
+            cursor.execute(query, (id_usuario,))
+            data = cursor.fetchall()
+
+            transacoes = []
+            for c in data:
+                transacao = Transacao(c[1],c[2],c[3],c[4],c[5],c[6],c[7])
+                transacao.id = c[0]
+                transacoes.append(transacao)
+
+            conn.close()
+            cursor.close()
+            return transacoes
+        except Exception as e:
+            print(f"Erro ao buscar transacao: {e}")
+            return []
+
+    @classmethod
+    def buscar_por_id(cls, id_transacao):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM transacao WHERE id = %s', (id_transacao,))
+            data = cursor.fetchone()
+
+            transacao = Transacao(data[1],data[2],data[3],data[4],data[5],data[6],data[7])
+            transacao.id = data[0]
+
+            cursor.close()
+            conn.close()
+            return transacao
+        except Exception as e:
+            print(f"Erro ao buscar transacao: {e}")
+            return []
+        
+    @classmethod
+    def atualizar(cls, id_transacao, campos):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
+            valores = list(campos.values()) + [id_transacao]
+
+            cursor.execute(f"UPDATE transacao SET {set_clause} WHERE id = %s", valores)
+            success = cursor.rowcount
+
+            conn.commit()
+            conn.close()
+            cursor.close()
+            return success > 0
+        except Exception as e:
+            print(f"Erro ao atualizar transacao: {e}")
+            return False    
+        
+    @classmethod
+    def deletar(cls, id_transacao):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM transacao WHERE id = %s", (id_transacao,))
+            success = cursor.rowcount
+
+            conn.commit()
+            conn.close()
+            cursor.close()
+            return success > 0
+        except Exception as e:
+            print(f"Erro ao buscar transacao: {e}")
             return False

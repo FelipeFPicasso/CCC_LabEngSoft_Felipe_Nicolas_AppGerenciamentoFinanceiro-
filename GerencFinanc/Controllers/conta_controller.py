@@ -87,8 +87,7 @@ def atualizar_conta(id_conta):
 @conta_bp.route('/conta/<int:id_conta>', methods=['DELETE'])
 def deletar_conta_por_id(id_conta):
     try:
-        conta = Conta.deletar_por_id(id_conta)
-        if conta:
+        if Conta.deletar_por_id(id_conta):
             return jsonify({'mensagem' : f'Cartão de id {id_conta} excluído com sucesso!'}), 200
         else:
             return jsonify({'erro': 'Conta não encontrada'}), 404
