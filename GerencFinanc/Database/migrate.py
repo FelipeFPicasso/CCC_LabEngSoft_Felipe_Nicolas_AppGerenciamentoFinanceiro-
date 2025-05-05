@@ -123,6 +123,22 @@ def criar_tabelas():
                 CONSTRAINT fk_usuario_saldo FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id),
                 CONSTRAINT fk_conta_saldo FOREIGN KEY (fk_id_conta) REFERENCES conta(id),
                 UNIQUE(fk_id_usuario, fk_id_conta)
+            );""",
+            """CREATE TABLE IF NOT EXISTS relatorio_transacao(
+                id SERIAL PRIMARY KEY,
+                fk_id_transacao INT,
+                descricao VARCHAR(255),
+                valor NUMERIC(7, 2),
+                data DATE,
+                fk_id_usuario INT,
+                fk_id_tipo_transacao INT,
+                fk_id_conta INT,
+                fk_id_categoria_transacao INT,
+                CONSTRAINT fk_relatorio_transacao FOREIGN KEY(fk_id_transacao) REFERENCES transacao(id),
+                CONSTRAINT fk_rel_usuario FOREIGN KEY(fk_id_usuario) REFERENCES usuario(id),
+                CONSTRAINT fk_rel_tipo FOREIGN KEY(fk_id_tipo_transacao) REFERENCES tipo_transacao(id),
+                CONSTRAINT fk_rel_conta FOREIGN KEY(fk_id_conta) REFERENCES conta(id),
+                CONSTRAINT fk_rel_categoria FOREIGN KEY(fk_id_categoria_transacao) REFERENCES categoria_transacao(id)
             );"""
         ]
 
@@ -132,6 +148,8 @@ def criar_tabelas():
         seed_registros_fixos(meu_banco)
 
         criar_trigger_saldo_atual()
+
+        criar_trigger_relatorio_transacao()
 
         cursor.close()
         conn.close()
@@ -180,3 +198,55 @@ def criar_trigger_saldo_atual():
         print("Trigger de saldo_atual criada com sucesso")
     except Exception as e:
         print(f"Erro ao criar trigger de saldo_atual: {e}")
+
+def criar_trigger_relatorio_transacao():
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+
+        comando_sql = """
+        -- Função para inserir no relatório
+        CREATE OR REPLACE FUNCTION inserir_relatorio_transacao()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            INSERT INTO relatorio_transacao (
+                fk_id_transacao,
+                descricao,
+                valor,
+                data,
+                fk_id_usuario,
+                fk_id_tipo_transacao,
+                fk_id_conta,
+                fk_id_categoria_transacao
+            )
+            VALUES (
+                NEW.id,
+                NEW.descricao,
+                NEW.valor,
+                NEW.data,
+                NEW.fk_id_usuario,
+                NEW.fk_id_tipo_transacao,
+                NEW.fk_id_conta,
+                NEW.fk_id_categoria_transacao
+            );
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        -- Trigger que chama a função após uma nova transação
+        DROP TRIGGER IF EXISTS trigger_relatorio_transacao ON transacao;
+
+        CREATE TRIGGER trigger_relatorio_transacao
+        AFTER INSERT ON transacao
+        FOR EACH ROW
+        EXECUTE FUNCTION inserir_relatorio_transacao();
+        """
+
+        cursor.execute(comando_sql)
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print("Trigger de relatorio_transacao criada com sucesso")
+    except Exception as e:
+        print(f"Erro ao criar trigger de relatorio_transacao: {e}")

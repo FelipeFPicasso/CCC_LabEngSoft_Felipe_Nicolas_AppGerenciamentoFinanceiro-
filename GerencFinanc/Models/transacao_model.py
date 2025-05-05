@@ -27,30 +27,29 @@ class Transacao:
         try:
             conn = conectar_financeiro()
             cursor = conn.cursor()
-
-            query = """
-                INSERT INTO transacao (descricao, valor, data, fk_id_usuario, fk_id_tipo_transacao, fk_id_conta, fk_id_categoria_transacao)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-
-            cursor.execute(query, (
-                transacao.descricao,
-                transacao.valor,
-                transacao.data,
-                transacao.fk_id_usuario,
-                transacao.fk_id_tipo_transacao,
-                transacao.fk_id_conta,
-                transacao.fk_id_categoria_transacao
-            ))
-
+            cursor.execute("""
+                           INSERT INTO transacao (descricao, valor, data, fk_id_usuario, fk_id_tipo_transacao,
+                                                  fk_id_conta, fk_id_categoria_transacao)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;
+                           """, (
+                               transacao.descricao,
+                               transacao.valor,
+                               transacao.data,
+                               transacao.fk_id_usuario,
+                               transacao.fk_id_tipo_transacao,
+                               transacao.fk_id_conta,
+                               transacao.fk_id_categoria_transacao
+                           ))
+            id_inserido = cursor.fetchone()[0]
             conn.commit()
             cursor.close()
             conn.close()
-            return True
+            return id_inserido
         except Exception as e:
-            print(f"Erro ao adicionar transação: {e}")
-            return False
-        
+            print(
+                f"Erro ao inserir transação. Descrição: {transacao.descricao}, Valor: {transacao.valor}, Erro: {str(e)}")
+            return None
+
     @classmethod
     def listar_todas(cls):
         try:
@@ -72,7 +71,7 @@ class Transacao:
         except Exception as e:
             print(f"Erro ao listar todas as transacoes: {e}")
             return []
-        
+
     @classmethod
     def listar_por_usuario(cls, id_usuario):
         try:
@@ -114,7 +113,7 @@ class Transacao:
         except Exception as e:
             print(f"Erro ao buscar transacao: {e}")
             return []
-        
+
     @classmethod
     def atualizar(cls, id_transacao, campos):
         try:
@@ -133,8 +132,8 @@ class Transacao:
             return success > 0
         except Exception as e:
             print(f"Erro ao atualizar transacao: {e}")
-            return False    
-        
+            return False
+
     @classmethod
     def deletar(cls, id_transacao):
         try:

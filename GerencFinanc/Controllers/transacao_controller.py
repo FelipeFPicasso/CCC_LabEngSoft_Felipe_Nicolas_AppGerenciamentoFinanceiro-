@@ -36,10 +36,18 @@ def criar_transacao(usuario_id):
         fk_id_categoria_transacao
     )
 
-    if Transacao.adicionar(nova_transacao):
-        return jsonify({'mensagem': 'Transação criada com sucesso'}), 201
-    else:
-        return jsonify({'erro': 'Erro ao criar transação'}), 500
+    # Chama o método para adicionar a transação
+    try:
+        id_transacao = Transacao.adicionar(nova_transacao)
+        if id_transacao:
+            return jsonify({
+                'mensagem': 'Transação criada com sucesso',
+                'id_transacao': id_transacao
+            }), 201
+        else:
+            return jsonify({'erro': 'Erro ao criar transação, verifique os dados enviados.'}), 500
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao criar transação: {str(e)}'}), 500
     
 #GET: Todas as transacoes
 @transacao_bp.route('/transacao', methods=['GET'])
