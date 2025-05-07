@@ -115,13 +115,13 @@ class Transacao:
             return []
 
     @classmethod
-    def atualizar(cls, id_transacao, campos):
+    def atualizar(cls, fk_id_transacao, campos):
         try:
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
             set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
-            valores = list(campos.values()) + [id_transacao]
+            valores = list(campos.values()) + [fk_id_transacao]
 
             cursor.execute(f"UPDATE transacao SET {set_clause} WHERE id = %s", valores)
             success = cursor.rowcount
@@ -140,13 +140,21 @@ class Transacao:
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
+            # Verifica se há vínculos na tabela relatorio_transacao
+            cursor.execute("SELECT COUNT(*) FROM relatorio_transacao WHERE fk_id_transacao = %s", (id_transacao,))
+            if cursor.fetchone()[0] > 0:
+                print(f"Transação {id_transacao} está vinculada a um relatório.")
+                cursor.close()
+                conn.close()
+                return False
+
             cursor.execute("DELETE FROM transacao WHERE id = %s", (id_transacao,))
             success = cursor.rowcount
 
             conn.commit()
-            conn.close()
             cursor.close()
+            conn.close()
             return success > 0
         except Exception as e:
-            print(f"Erro ao buscar transacao: {e}")
+            print(f"Erro ao deletar transacao: {e}")
             return False

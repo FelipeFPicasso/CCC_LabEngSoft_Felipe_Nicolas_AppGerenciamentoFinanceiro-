@@ -51,5 +51,5 @@ def valida_senha(password: str, return_details = False) -> bool:
 
     return valid
 
-def valida_data_nasc(data_nasc) -> bool:
+#def valida_data_nasc(data_nasc) -> bool:
     

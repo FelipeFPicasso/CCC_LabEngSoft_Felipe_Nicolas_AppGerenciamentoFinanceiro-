@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import datetime
 from Models.usuario_model import Usuario
+from Database.conexao import conectar_financeiro
 
 
 usuario_bp = Blueprint('usuario', __name__)
@@ -80,10 +81,19 @@ def atualizar_usuario(id_usuario):
         return jsonify({'erro': 'Erro ao atualizar usuário'}), 500
 
 
-@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['DELETE'])
-def excluir_usuario(id_usuario):
+@classmethod
+def deletar(cls, id_transacao):
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
 
-    if Usuario.deletar(id_usuario):
-        return jsonify({'mensagem' : 'Usuário excluído com sucesso'}), 200
-    else:
-        return jsonify({'erro': 'Usuário não encontrado'}), 404
+        cursor.execute("DELETE FROM transacao WHERE id = %s", (id_transacao,))
+        success = cursor.rowcount
+
+        conn.commit()
+        conn.close()
+        cursor.close()
+        return success > 0
+    except Exception as e:
+        print(f"Erro ao buscar transacao: {e}")
+        return False
