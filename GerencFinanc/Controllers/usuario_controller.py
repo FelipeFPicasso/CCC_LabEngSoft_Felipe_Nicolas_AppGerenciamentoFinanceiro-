@@ -21,16 +21,18 @@ def criar_usuario():
 
     if not (nome and email and senha and data_nasc and cpf):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
-    
+
     try:
         datetime.datetime.strptime(data_nasc, '%Y-%m-%d')
     except ValueError:
         return jsonify({'erro': 'data_nasc deve estar no formato YYYY-MM-DD'}), 400
 
     novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
-    usuario_cadastrado = Usuario.adicionar(novo_usuario)
+    resultado = Usuario.adicionar(novo_usuario)
 
-    if usuario_cadastrado:
+    if resultado == 'unique_violation':
+        return jsonify({'erro': 'Email ou CPF já cadastrados'}), 409  # 409 Conflict
+    elif resultado:
         return jsonify({'mensagem': 'Usuário criado com sucesso'}), 201
     else:
         return jsonify({'erro': 'Erro ao criar usuário'}), 500

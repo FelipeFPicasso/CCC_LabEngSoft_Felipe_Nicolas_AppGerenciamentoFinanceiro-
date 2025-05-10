@@ -60,10 +60,10 @@ def criar_tabelas():
             """CREATE TABLE IF NOT EXISTS usuario (
                 id SERIAL PRIMARY KEY,
                 nome VARCHAR(255),
-                email VARCHAR(255),
+                email VARCHAR(255) UNIQUE,
                 senha VARCHAR(255),
                 data_nasc DATE,
-                cpf VARCHAR(14)
+                cpf VARCHAR(14) UNIQUE
             );""",
             """CREATE TABLE IF NOT EXISTS recorrencia (
                 id SERIAL PRIMARY KEY,

@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import errors
 from psycopg2 import sql
 import bcrypt
 from Database.conexao import conectar_financeiro
@@ -32,24 +33,26 @@ class Usuario:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            # Gerar o hash da senha com o bcrypt
             hashed_senha = bcrypt.hashpw(usuario.senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
             query = sql.SQL("""INSERT INTO usuario (nome, email, senha, data_nasc, cpf)
                                VALUES (%s, %s, %s, %s, %s) RETURNING id""")
             cursor.execute(query, (usuario.nome, usuario.email, hashed_senha, usuario.data_nasc, usuario.cpf))
 
-            # Pegando o id gerado automaticamente após o insert
             usuario_id = cursor.fetchone()[0]
             conn.commit()
 
             cursor.close()
             conn.close()
 
-            # Atualizando o objeto com o id gerado
             usuario.id = usuario_id
-            usuario.senha = hashed_senha  # Armazenando a senha como string do hash
+            usuario.senha = hashed_senha
             return usuario
+
+        except errors.UniqueViolation as e:
+            print("Violação de unicidade:", e)
+            return 'unique_violation'
+
         except Exception as e:
             print(f"Erro ao adicionar usuário: {e}")
             return None
