@@ -11,15 +11,14 @@ def criar_conta(usuario_id):
     dados = request.get_json()
     nome_banco = dados.get('nome_banco')
     saldo_inicial = dados.get('saldo_inicial')
-    fk_id_usuario = dados.get('fk_id_usuario')
     fk_id_cartao = dados.get('fk_id_cartao')
 
     # Verifica se os campos obrigatórios estão presentes
     if not (nome_banco and saldo_inicial and fk_id_cartao):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
-    # Cria a conta associando o usuario_id que veio do token
-    nova_conta = Conta(nome_banco, saldo_inicial, fk_id_usuario, fk_id_cartao)
+    # Usa o usuario_id extraído do token
+    nova_conta = Conta(nome_banco, saldo_inicial, usuario_id, fk_id_cartao)
     conta_adicionada = Conta.adicionar(nova_conta)
 
     if conta_adicionada:
