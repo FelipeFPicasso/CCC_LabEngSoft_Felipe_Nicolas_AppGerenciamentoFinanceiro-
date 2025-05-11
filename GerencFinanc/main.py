@@ -22,7 +22,6 @@ app.register_blueprint(cartao_bp)
 app.register_blueprint(limite_bp)
 app.register_blueprint(transacao_bp)
 app.register_blueprint(saldo_bp)
-
 app.register_blueprint(relatorio_transacao_bp)
 
 if __name__ == '__main__':

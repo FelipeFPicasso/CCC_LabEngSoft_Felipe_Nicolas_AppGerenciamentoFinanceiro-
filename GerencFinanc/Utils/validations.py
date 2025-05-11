@@ -1,5 +1,13 @@
 from email_validator import validate_email, EmailNotValidError
+from flask import abort
+import datetime
+import json
 import re
+
+def valida_todos(email, senha, data_nasc, return_details=True):
+    valida_data_nasc(data_nasc)
+    valida_email(email)
+    valida_senha(senha, return_details)
 
 def valida_email(email, return_details: bool = False, check_dns: bool = False) -> bool:
     try:
@@ -8,48 +16,47 @@ def valida_email(email, return_details: bool = False, check_dns: bool = False) -
             return {
                 "valid": True,
                 "normalized": result["email"],
-                "local": result.get("local"),
-                "domain": result.get("domain"),
-                "domain_info": result.get("domain_info")
+                "local": result.local_part,
+                "domain": result.domain,
             }
         return True
+    
     except EmailNotValidError as e:
         if return_details:
-            return {"valid": False, "error": str(e)}
-        return False
+            abort (400, description=f'Email invalido, erro encontrado: {str(e)}')
+        abort (400, description=f'Email Invalido') 
+
     except Exception as e:
         if return_details:
-            return {"valid": False, "error": "Unknown error: " + str(e)}
-        return False
+            abort (400, description=f'Email invalido, erro desconhecido: {str(e)}')
+        abort (400, description=f'Email Inválido') 
     
 def valida_senha(password: str, return_details = False) -> bool:
-
     error_pattern = "A senha deve conter: \n"
 
     errors = []
 
     if not (7 <= len(password) <= 50):
-        errors.append("Entre 7 e 50 caracteres.")
+        errors.append("Entre 7 e 50 caracteres;")
     if not re.search(r"[A-Z]", password):
-        errors.append("Ao menos 1 letra maiúscula.")
+        errors.append("Ao menos 1 letra maiúscula;")
     if not re.search(r"[a-z]", password):
-        errors.append("Ao menos 1 letra minúscula.")
+        errors.append("Ao menos 1 letra minúscula;")
     if not re.search(r"\d", password):
-        errors.append("Ao menos 1 dígito.")
-    if not re.search(r"[!@#$%^&*()?]", password):
-        errors.append("Ao menos 1 caracter especial: !@#$%^&*()?")
-    
+        errors.append("Ao menos 1 dígito;")
+    if not re.search(r"[!@#$%^*()?]", password):
+        errors.append("Ao menos 1 caracter especial: !@#$%^*()?")
+
     valid = len(errors) == 0
 
-    if return_details:
-        if not valid:
-            return {
-                "valid": valid,
-                "message": error_pattern,
-                "errors": errors
-            }
+    if not valid:
+        if return_details:
+            abort(400, description=' '.join(errors))
 
-    return valid
+    return True    
 
-#def valida_data_nasc(data_nasc) -> bool:
-    
+def valida_data_nasc(data_nasc) -> bool:
+    try:
+        datetime.datetime.strptime(data_nasc, '%Y-%m-%d')
+    except ValueError:
+        abort(400, description='data_nasc deve estar no formato YYYY-MM-DD')

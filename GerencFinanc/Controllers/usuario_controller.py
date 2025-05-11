@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import datetime
 from Models.usuario_model import Usuario
 from Database.conexao import conectar_financeiro
+import Utils.validations as validator
 
 
 usuario_bp = Blueprint('usuario', __name__)
@@ -22,10 +23,7 @@ def criar_usuario():
     if not (nome and email and senha and data_nasc and cpf):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
-    try:
-        datetime.datetime.strptime(data_nasc, '%Y-%m-%d')
-    except ValueError:
-        return jsonify({'erro': 'data_nasc deve estar no formato YYYY-MM-DD'}), 400
+    validator.valida_todos(email, senha, data_nasc)
 
     novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
     resultado = Usuario.adicionar(novo_usuario)
@@ -83,19 +81,11 @@ def atualizar_usuario(id_usuario):
         return jsonify({'erro': 'Erro ao atualizar usuário'}), 500
 
 
-@classmethod
-def deletar(cls, id_transacao):
-    try:
-        conn = conectar_financeiro()
-        cursor = conn.cursor()
+@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['DELETE'])
+def deletar_usuario(id_usuario):
 
-        cursor.execute("DELETE FROM transacao WHERE id = %s", (id_transacao,))
-        success = cursor.rowcount
+    if Usuario.deletar(id_usuario):
+        return jsonify({'mensagem': 'Usuário deletado com sucesso'}), 200
+    else:
+        return jsonify({'erro': 'Erro ao deletar usuário'}), 500
 
-        conn.commit()
-        conn.close()
-        cursor.close()
-        return success > 0
-    except Exception as e:
-        print(f"Erro ao buscar transacao: {e}")
-        return False
