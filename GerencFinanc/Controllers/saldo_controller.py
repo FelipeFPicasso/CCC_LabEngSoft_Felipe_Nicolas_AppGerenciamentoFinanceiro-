@@ -8,6 +8,7 @@ saldo_bp = Blueprint('saldo', __name__)
 @token_required
 def obter_saldo_atual(fk_id_usuario, fk_id_conta):
     saldo = Saldo.buscar_por_usuario_e_conta(fk_id_usuario, fk_id_conta)
+    
     if saldo:
         return jsonify(saldo.to_dict()), 200
     return jsonify({'erro': 'Saldo não encontrado para esta conta'}), 404

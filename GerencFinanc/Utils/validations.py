@@ -3,6 +3,7 @@ from flask import abort
 import datetime
 import json
 import re
+import Models.usuario_model as Usuario
 
 def valida_todos(email, senha, data, return_details=True, is_data_nasc:bool = True):
     valida_data(data, is_data_nasc)
@@ -19,6 +20,7 @@ def valida_email(email, return_details: bool = False, check_dns: bool = False):
                 "local": result.local_part,
                 "domain": result.domain,
             }
+
         return True
     
     except EmailNotValidError or Exception as e:

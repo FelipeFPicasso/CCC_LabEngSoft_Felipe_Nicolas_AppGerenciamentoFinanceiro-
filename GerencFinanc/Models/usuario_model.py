@@ -14,7 +14,7 @@ class Usuario:
         self.nome = nome
         self.email = email
         self.senha = senha
-        self.data_nasc = data_nasc  # deve ser uma string no formato YYYY-MM-DD
+        self.data_nasc = data_nasc
         self.cpf = cpf
 
     def to_dict(self):
@@ -38,7 +38,7 @@ class Usuario:
             query = sql.SQL("""INSERT INTO usuario (nome, email, senha, data_nasc, cpf)
                                VALUES (%s, %s, %s, %s, %s) RETURNING id""")
             cursor.execute(query, (usuario.nome, usuario.email, hashed_senha, usuario.data_nasc, usuario.cpf))
-
+            
             usuario_id = cursor.fetchone()[0]
             conn.commit()
 
