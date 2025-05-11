@@ -4,7 +4,7 @@ import datetime
 import json
 import re
 
-def valida_todos(email, senha, data_nasc, return_details=True):
+def valida_todos(email, senha, data_nasc, return_details=True, is_data_nasc:bool = True):
     valida_data(data_nasc)
     valida_email(email)
     valida_senha(senha, return_details)
@@ -49,7 +49,7 @@ def valida_senha(password: str, return_details=False) -> bool:
 
     return True
 
-def valida_data(data, is_data_nasc: bool) -> bool:
+def valida_data(data, is_data_nasc: bool = False ) -> bool:
     try:
         data = datetime.datetime.strptime(data, '%d/%m/%Y').date()
     except ValueError:

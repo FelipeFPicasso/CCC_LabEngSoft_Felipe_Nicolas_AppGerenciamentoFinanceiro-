@@ -25,7 +25,7 @@ def criar_usuario():
     if not (nome and email and senha and data_nasc and cpf):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
-    validator.valida_todos(email, senha, data_nasc) 
+    validator.valida_todos(email, senha, data_nasc, is_data_nasc=True) 
 
     novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
     resultado = Usuario.adicionar(novo_usuario)
