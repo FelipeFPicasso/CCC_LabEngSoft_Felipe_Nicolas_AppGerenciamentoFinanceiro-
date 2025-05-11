@@ -19,22 +19,24 @@ def criar_usuario():
     nome = dados.get('nome')
     email = dados.get('email')
     senha = dados.get('senha')
-    data_nasc = dados.get('data_nasc')  # Ex: "10/05/2025"
+    data_nasc = dados.get('data_nasc')
     cpf = dados.get('cpf')
 
     if not (nome and email and senha and data_nasc and cpf):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
-    validator.valida_todos(email, senha, data_nasc, is_data_nasc=True) 
+    try:
+        validator.valida_todos(email, senha, data_nasc, is_data_nasc=True)
 
-    novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
-    resultado = Usuario.adicionar(novo_usuario)
+        novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
+        Usuario.adicionar(novo_usuario)
 
-    if resultado == 'unique_violation':
-        return jsonify({'erro': 'Email ou CPF já cadastrados'}), 409
-    elif resultado:
         return jsonify({'mensagem': 'Usuário criado com sucesso'}), 201
-    else:
+
+    except ValueError as ve:
+        return jsonify({'erro': str(ve)}), 409
+
+    except Exception as e:
         return jsonify({'erro': 'Erro ao criar usuário'}), 500
 
 #GET: Busca por todos os usuarios cadastrados

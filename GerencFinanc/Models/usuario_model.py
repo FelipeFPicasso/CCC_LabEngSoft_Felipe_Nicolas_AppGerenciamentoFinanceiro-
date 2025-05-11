@@ -4,6 +4,7 @@ from psycopg2 import sql
 import bcrypt
 from Database.conexao import conectar_financeiro
 
+
 class Usuario:
     # Conexão com o banco de dados
     @staticmethod
@@ -29,6 +30,8 @@ class Usuario:
 
     @classmethod
     def adicionar(cls, usuario):
+        conn = None
+        cursor = None
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
@@ -38,24 +41,31 @@ class Usuario:
             query = sql.SQL("""INSERT INTO usuario (nome, email, senha, data_nasc, cpf)
                                VALUES (%s, %s, %s, %s, %s) RETURNING id""")
             cursor.execute(query, (usuario.nome, usuario.email, hashed_senha, usuario.data_nasc, usuario.cpf))
-            
+
             usuario_id = cursor.fetchone()[0]
             conn.commit()
-
-            cursor.close()
-            conn.close()
 
             usuario.id = usuario_id
             usuario.senha = hashed_senha
             return usuario
 
-        except errors.UniqueViolation as e:
-            print("Violação de unicidade:", e)
-            return 'unique_violation'
+        except psycopg2.IntegrityError as e:
+            if conn:
+                conn.rollback()
+            if hasattr(e, 'pgcode') and e.pgcode == '23505':  # Código de erro para violação de unicidade
+                raise ValueError("Email ou CPF já cadastrados")
+            raise
 
         except Exception as e:
-            print(f"Erro ao adicionar usuário: {e}")
-            return None
+            if conn:
+                conn.rollback()
+            raise
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
     @classmethod
     def listar_todos(cls):
