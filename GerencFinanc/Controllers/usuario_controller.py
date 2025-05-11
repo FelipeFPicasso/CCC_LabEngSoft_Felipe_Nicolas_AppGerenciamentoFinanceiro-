@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import datetime
 from Models.usuario_model import Usuario
 from Database.conexao import conectar_financeiro
+from datetime import datetime
 import Utils.validations as validator
 
 
@@ -17,19 +18,24 @@ def criar_usuario():
     nome = dados.get('nome')
     email = dados.get('email')
     senha = dados.get('senha')
-    data_nasc = dados.get('data_nasc')
+    data_nasc_str = dados.get('data_nasc')  # Ex: "10/05/2025"
     cpf = dados.get('cpf')
 
-    if not (nome and email and senha and data_nasc and cpf):
+    if not (nome and email and senha and data_nasc_str and cpf):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
-    validator.valida_todos(email, senha, data_nasc)
+    try:
+        data_nasc = datetime.strptime(data_nasc_str, '%d/%m/%Y').date()
+    except ValueError:
+        return jsonify({'erro': 'Data de nascimento inválida. Use o formato DD/MM/AAAA'}), 400
+
+    validator.valida_todos(email, senha, data_nasc)  # <- data_nasc agora é um date
 
     novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
     resultado = Usuario.adicionar(novo_usuario)
 
     if resultado == 'unique_violation':
-        return jsonify({'erro': 'Email ou CPF já cadastrados'}), 409  # 409 Conflict
+        return jsonify({'erro': 'Email ou CPF já cadastrados'}), 409
     elif resultado:
         return jsonify({'mensagem': 'Usuário criado com sucesso'}), 201
     else:

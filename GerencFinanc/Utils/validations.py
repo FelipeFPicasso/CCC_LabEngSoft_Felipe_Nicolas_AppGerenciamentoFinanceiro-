@@ -56,7 +56,13 @@ def valida_senha(password: str, return_details = False) -> bool:
     return True    
 
 def valida_data_nasc(data_nasc) -> bool:
-    try:
-        datetime.datetime.strptime(data_nasc, '%Y-%m-%d')
-    except ValueError:
-        abort(400, description='data_nasc deve estar no formato YYYY-MM-DD')
+    if not isinstance(data_nasc, datetime.date):
+        abort(400, description='data_nasc deve ser um objeto datetime.date')
+
+    hoje = datetime.date.today()
+    idade = hoje.year - data_nasc.year - ((hoje.month, hoje.day) < (data_nasc.month, data_nasc.day))
+
+    if idade < 18:
+        abort(400, description='Usuário deve ter pelo menos 18 anos de idade')
+
+    return True
