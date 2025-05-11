@@ -5,11 +5,11 @@ import json
 import re
 
 def valida_todos(email, senha, data_nasc, return_details=True):
-    valida_data_nasc(data_nasc)
+    valida_data(data_nasc)
     valida_email(email)
     valida_senha(senha, return_details)
 
-def valida_email(email, return_details: bool = False, check_dns: bool = False) -> bool:
+def valida_email(email, return_details: bool = False, check_dns: bool = False):
     try:
         result = validate_email(email,check_deliverability=check_dns)
         if return_details:
@@ -21,19 +21,13 @@ def valida_email(email, return_details: bool = False, check_dns: bool = False) -
             }
         return True
     
-    except EmailNotValidError as e:
+    except EmailNotValidError or Exception as e:
         if return_details:
             abort (400, description=f'Email invalido, erro encontrado: {str(e)}')
         abort (400, description=f'Email Invalido') 
-
-    except Exception as e:
-        if return_details:
-            abort (400, description=f'Email invalido, erro desconhecido: {str(e)}')
-        abort (400, description=f'Email Inválido') 
     
-def valida_senha(password: str, return_details = False) -> bool:
-    error_pattern = "A senha deve conter: \n"
-
+def valida_senha(password: str, return_details=False) -> bool:
+    error_pattern = "A senha deve conter:\n"
     errors = []
 
     if not (7 <= len(password) <= 50):
@@ -47,15 +41,20 @@ def valida_senha(password: str, return_details = False) -> bool:
     if not re.search(r"[!@#$%^*()?]", password):
         errors.append("Ao menos 1 caracter especial: !@#$%^*()?")
 
-    valid = len(errors) == 0
-
-    if not valid:
+    if errors:
         if return_details:
-            abort(400, description=' '.join(errors))
+            abort(400, description=error_pattern + " ".join(errors))
+        else:
+            abort(400, description="Senha inválida")
 
-    return True    
+    return True
 
-def valida_data_nasc(data_nasc) -> bool:
+def valida_data(data_nasc) -> bool:
+    try:
+        data_nasc = datetime.datetime.strptime(data_nasc, '%d/%m/%Y').date()
+    except ValueError:
+        abort(400, description='data_nasc deve estar no formato DD/MM/YYYY')
+
     if not isinstance(data_nasc, datetime.date):
         abort(400, description='data_nasc deve ser um objeto datetime.date')
 

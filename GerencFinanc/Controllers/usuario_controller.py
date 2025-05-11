@@ -5,31 +5,27 @@ from Database.conexao import conectar_financeiro
 from datetime import datetime
 import Utils.validations as validator
 
-
 usuario_bp = Blueprint('usuario', __name__)
 
+#Busca por ID no banco
 def busca_por_id(id_usuario):
     todos = Usuario.listar_todos()
     return next((u for u in todos if u['id'] == id_usuario), None)  
 
+#POST: Cadastro do usuario
 @usuario_bp.route('/usuarios', methods=['POST'])
 def criar_usuario():
     dados = request.get_json()
     nome = dados.get('nome')
     email = dados.get('email')
     senha = dados.get('senha')
-    data_nasc_str = dados.get('data_nasc')  # Ex: "10/05/2025"
+    data_nasc = dados.get('data_nasc')  # Ex: "10/05/2025"
     cpf = dados.get('cpf')
 
-    if not (nome and email and senha and data_nasc_str and cpf):
+    if not (nome and email and senha and data_nasc and cpf):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
-    try:
-        data_nasc = datetime.strptime(data_nasc_str, '%d/%m/%Y').date()
-    except ValueError:
-        return jsonify({'erro': 'Data de nascimento inválida. Use o formato DD/MM/AAAA'}), 400
-
-    validator.valida_todos(email, senha, data_nasc)  # <- data_nasc agora é um date
+    validator.valida_todos(email, senha, data_nasc) 
 
     novo_usuario = Usuario(nome, email, senha, data_nasc, cpf)
     resultado = Usuario.adicionar(novo_usuario)
@@ -41,6 +37,7 @@ def criar_usuario():
     else:
         return jsonify({'erro': 'Erro ao criar usuário'}), 500
 
+#GET: Busca por todos os usuarios cadastrados
 @usuario_bp.route('/usuarios', methods=['GET'])
 def listar_usuarios():
     nome = request.args.get('nome')
@@ -56,6 +53,7 @@ def listar_usuarios():
 
     return jsonify(usuarios), 200
 
+#GET: retorna usuarios cadastrados por ID 
 @usuario_bp.route('/usuarios/<int:id_usuario>', methods=['GET'])
 def buscar_usuario_por_id(id_usuario):
     usuario = busca_por_id(id_usuario)
@@ -64,6 +62,7 @@ def buscar_usuario_por_id(id_usuario):
         return jsonify(usuario), 200
     return jsonify({'erro': 'Usuário não encontrado'}), 404
 
+#PUT: Atualiza informacoes de cadastro do usuario
 @usuario_bp.route('/usuarios/<int:id_usuario>', methods=['PUT'])
 def atualizar_usuario(id_usuario):
     dados = request.get_json()
@@ -77,6 +76,14 @@ def atualizar_usuario(id_usuario):
         key: value for key, value in dados.items() 
         if key in permitidos
     }
+
+    for campo, valor in campos.items():
+        if campo == 'email':
+            validator.valida_email(valor)
+        if campo == 'senha':
+            validator.valida_senha(valor, return_details=True)
+        if campo == 'data_nasc':
+            validator.valida_data_nasc(valor)
 
     if not campos:
         return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from Models.transacao_model import Transacao
 from Utils.auth import token_required
 import datetime
+import Utils.validations as validator
 
 transacao_bp = Blueprint('transacao', __name__)
 
@@ -20,16 +21,13 @@ def criar_transacao(usuario_id):
 
     if not all([descricao, valor, data, fk_id_conta, fk_id_categoria_transacao, fk_id_tipo_transacao]):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
-
-    try:
-        data_formatada = datetime.datetime.strptime(data, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'erro': 'Data inválida. Use o formato YYYY-MM-DD'}), 400
-
+    
+    validator.valida_data(data)
+    
     nova_transacao = Transacao(
         descricao,
         valor,
-        data_formatada,
+        data,
         usuario_id,
         fk_id_tipo_transacao,
         fk_id_conta,
@@ -97,6 +95,10 @@ def atualizar_transacao(usuario_id, fk_id_transacao):
         permitidos = {'descricao', 'valor', 'data', 'fk_id_tipo_transacao', 'fk_id_conta', 'fk_id_categoria_transacao'}
         campos = {key: value for key, value in dados.items() if key in permitidos}
 
+        for campo, valor in campos.items():
+            if campo == 'data':
+                validator.valida_data(valor)
+            
         if not campos:
             return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400
 

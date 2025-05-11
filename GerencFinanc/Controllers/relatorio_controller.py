@@ -5,7 +5,6 @@ from Models.relatorio_model import RelatorioTransacao
 
 relatorio_transacao_bp = Blueprint('relatorio_transacao_bp', __name__)
 
-
 @relatorio_transacao_bp.route('/relatorio_transacao/transacao/<int:fk_id_transacao>', methods=['GET'])
 @token_required
 def get_relatorio_transacao(usuario_id, fk_id_transacao):
