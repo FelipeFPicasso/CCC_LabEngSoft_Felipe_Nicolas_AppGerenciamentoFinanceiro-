@@ -21,9 +21,15 @@ def criar_transacao(usuario_id):
 
     if not all([descricao, valor, data, fk_id_conta, fk_id_categoria_transacao, fk_id_tipo_transacao]):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
-    
+
     validator.valida_data(data)
-    
+
+    # Verificar o tipo da transação e ajustar o valor
+    if fk_id_tipo_transacao == 1:  # Suponha que '1' seja Receita
+        valor = abs(valor)  # Garante que o valor será positivo para receitas
+    elif fk_id_tipo_transacao == 2:  # Suponha que '2' seja Despesa
+        valor = -abs(valor)  # Garante que o valor será negativo para despesas
+
     nova_transacao = Transacao(
         descricao,
         valor,
