@@ -63,7 +63,9 @@ def criar_tabelas():
                 email VARCHAR(255) UNIQUE,
                 senha VARCHAR(255),
                 data_nasc DATE,
-                cpf VARCHAR(14) UNIQUE
+                cpf VARCHAR(14) UNIQUE,
+                codigo_recuperacao VARCHAR(10),
+                codigo_expira_em TIMESTAMP
             );""",
             """CREATE TABLE IF NOT EXISTS recorrencia (
                 id SERIAL PRIMARY KEY,

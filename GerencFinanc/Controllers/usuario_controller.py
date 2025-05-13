@@ -3,7 +3,10 @@ import datetime
 from Models.usuario_model import Usuario
 from Database.conexao import conectar_financeiro
 from datetime import datetime
+from datetime import datetime, timedelta
 import Utils.validations as validator
+from random import randint
+from Utils.cod_recup_senha import gerar_codigo_recuperacao
 
 usuario_bp = Blueprint('usuario', __name__)
 
@@ -104,3 +107,56 @@ def deletar_usuario(id_usuario):
     else:
         return jsonify({'erro': 'Erro ao deletar usuário'}), 500
 
+@usuario_bp.route('/usuarios/recuperar', methods=['POST'])
+def recuperar_senha():
+    dados = request.get_json()
+    email = dados.get('email')
+
+    if not email:
+        return jsonify({'erro': 'E-mail é obrigatório'}), 400
+
+    usuario = Usuario.buscar_por_email(email)
+
+    if not usuario:
+        return jsonify({'erro': 'E-mail não encontrado'}), 404
+
+    # Geração de código de 6 dígitos
+    codigo = str(randint(100000, 999999))
+
+    # Expira em 15 minutos
+    expiracao = datetime.utcnow() + timedelta(minutes=15)  # ✅ corrigido aqui
+
+    # Armazena o código e sua expiração no banco
+    Usuario.armazenar_codigo_recuperacao(email, codigo, expiracao)
+
+    # Aqui você enviaria o código por e-mail no mundo real
+    print(f"Código de recuperação para {email}: {codigo}")  # Debug
+
+    return jsonify({'mensagem': 'Código de recuperação enviado para o e-mail'}), 200
+
+
+@usuario_bp.route('/usuarios/senha', methods=['PUT'])
+def alterar_senha():
+    dados = request.get_json()
+    email = dados.get('email')
+    nova_senha = dados.get('nova_senha')
+    codigo_recuperacao = dados.get('codigo_recuperacao')
+
+    # Verificação de parâmetros obrigatórios
+    if not email or not nova_senha or not codigo_recuperacao:
+        return jsonify({'erro': 'E-mail, nova senha e código de recuperação são obrigatórios'}), 400
+
+    try:
+        # Validação do código de recuperação
+        Usuario.validar_codigo_recuperacao(email, codigo_recuperacao)
+
+        # Alteração da senha
+        Usuario.alterar_senha(email, nova_senha)
+
+        return jsonify({'mensagem': 'Senha alterada com sucesso'}), 200
+    except ValueError as ve:
+        # Erros de validação (código inválido ou expirado)
+        return jsonify({'erro': str(ve)}), 400
+    except Exception as e:
+        # Outros erros
+        return jsonify({'erro': f'Erro ao atualizar a senha: {str(e)}'}), 500

@@ -3,6 +3,7 @@ from psycopg2 import errors
 from psycopg2 import sql
 import bcrypt
 from Database.conexao import conectar_financeiro
+from datetime import datetime, timedelta
 
 
 class Usuario:
@@ -152,3 +153,79 @@ class Usuario:
             print(f"Erro ao deletar usuário: {e}")
             return False
 
+    @classmethod
+    def armazenar_codigo_recuperacao(cls, email, codigo, expiracao):
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+        cursor.execute("""
+                       UPDATE usuario
+                       SET codigo_recuperacao = %s,
+                           codigo_expira_em   = %s
+                       WHERE email = %s
+                       """, (codigo, expiracao, email))
+        conn.commit()
+
+        # Verificação para garantir que a atualização foi feita
+        cursor.execute("SELECT codigo_recuperacao FROM usuario WHERE email = %s", (email,))
+        resultado = cursor.fetchone()
+        if resultado and resultado[0] == codigo:
+            print(f"Código de recuperação para {email} atualizado com sucesso.")
+        else:
+            print(f"Falha ao atualizar código de recuperação para {email}.")
+
+        cursor.close()
+        conn.close()
+
+    @classmethod
+    def alterar_senha(cls, email, nova_senha):
+        # Criptografa a nova senha
+        hashed_senha = bcrypt.hashpw(nova_senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        # Atualiza a senha no banco
+        conn = cls._conectar()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                           UPDATE usuario
+                           SET senha = %s
+                           WHERE email = %s
+                           """, (hashed_senha, email))
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            print(f"Erro ao alterar a senha: {e}")
+            raise
+        return True
+
+    @classmethod
+    def validar_codigo_recuperacao(cls, email, codigo):
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+        cursor.execute("""
+                       SELECT codigo_recuperacao, codigo_expira_em
+                       FROM usuario
+                       WHERE email = %s
+                       """, (email,))
+        resultado = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not resultado:
+            raise ValueError("E-mail não encontrado")
+
+        codigo_armazenado, expiracao = resultado
+        print(f"Código armazenado: {codigo_armazenado}, Expiração: {expiracao}")
+
+        if codigo != codigo_armazenado:
+            raise ValueError("Código inválido")
+
+        # Verificação de expiração
+        if expiracao and datetime.utcnow() > expiracao:
+            raise ValueError("Código expirado")
+
+        return True
