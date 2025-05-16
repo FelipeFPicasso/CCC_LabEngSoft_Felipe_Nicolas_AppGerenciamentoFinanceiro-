@@ -1,106 +1,88 @@
+from datetime import datetime
+from Utils.auth import token_required
 from flask import Blueprint, request, jsonify, Flask
 from Models.cartao_model import Cartao
-from Utils.auth import token_required  # Importando o decorator de autenticação
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
-cartao_bp = Blueprint('cartao', __name__)
+cartao_bp = Blueprint('cartao_bp', __name__)
 
-# POST: Criar um novo cartão
-@cartao_bp.route('/cartao', methods=['POST'])
+@cartao_bp.route('/cartoes', methods=['POST'])
 @token_required
-def criar_cartao(usuario_id):  # <-- recebe o ID do usuário autenticado
-    dados = request.get_json()
+def criar_cartao():
+    dados = request.json
     limite = dados.get('limite')
-    venc_fatura = dados.get('venc_fatura')
+    venc_fatura = dados.get('venc_fatura')  # esperado formato dd/mm/yyyy
+    fk_id_conta = dados.get('fk_id_conta')
 
-    if not (limite and venc_fatura):
-        return jsonify({'erro': 'limite e venc_fatura são obrigatórios'}), 400
+    if limite is None or venc_fatura is None or fk_id_conta is None:
+        return jsonify({'erro': 'limite, venc_fatura e fk_id_conta são obrigatórios'}), 400
 
-    novo_cartao = Cartao(limite, venc_fatura)
-
-    # O usuário já está associado ao cartão por meio do token
-    cartao_adicionado = Cartao.adicionar(novo_cartao, usuario_id)
-
-    if cartao_adicionado:
-        return jsonify({'mensagem': 'Cartão criado com sucesso', 'cartao': cartao_adicionado.to_dict()}), 201
-    else:
-        return jsonify({'erro': 'Erro ao criar cartão'}), 500
-
-# GET: Listar todos os cartões
-@cartao_bp.route('/cartao', methods=['GET'])
-@token_required
-def listar_cartoes(usuario_id):
+    # Converter venc_fatura de dd/mm/yyyy para yyyy-mm-dd
     try:
-        cartoes = Cartao.listar_todos()
-        return jsonify({'cartoes': [cartao.to_dict() for cartao in cartoes]}), 200
-    except Exception as e:
-        return jsonify({'erro': f'Erro ao listar cartões: {str(e)}'}), 500
+        venc_fatura_us = datetime.strptime(venc_fatura, '%d/%m/%Y').strftime('%Y-%m-%d')
+    except ValueError:
+        return jsonify({'erro': 'Formato de data inválido para venc_fatura. Use dd/mm/yyyy'}), 400
 
-# GET: Buscar cartão por ID
-@cartao_bp.route('/cartao/<int:id_cartao>', methods=['GET'])
-@token_required
-def buscar_cartao_por_id(id_cartao):
+    cartao = Cartao(limite, venc_fatura_us, fk_id_conta)
+
+    cartao_adicionado = Cartao.adicionar(cartao)
+    if cartao_adicionado is None:
+        return jsonify({'erro': 'Falha ao adicionar cartão'}), 500
+
+    # Aqui, se quiser retornar no formato BR para o cliente, pode converter novamente antes de retornar
+    retorno = cartao_adicionado.to_dict()
     try:
-        cartao = Cartao.buscar_por_id(id_cartao)
-        if cartao:
-            return jsonify({'cartao': cartao.to_dict()}), 200
-        else:
-            return jsonify({'erro': 'Cartão não encontrado'}), 404
-    except Exception as e:
-        return jsonify({'erro': f'Erro ao buscar cartão: {str(e)}'}), 500
+        # converter de volta para dd/mm/yyyy para o front
+        retorno['venc_fatura'] = datetime.strptime(retorno['venc_fatura'], '%Y-%m-%d').strftime('%d/%m/%Y')
+    except Exception:
+        pass
 
-#GET: Buscar cartões do usuário
-@cartao_bp.route('/cartao/usuario/<int:id_usuario>', methods=['GET'])
-@token_required
-def listar_cartoes_usuario(usuario_id, id_usuario):
+    return jsonify(retorno), 201
+
+@cartao_bp.route('/cartoes', methods=['GET'])
+def listar_todos_cartoes():
+    cartoes = Cartao.listar_todos()
+    lista = []
+    for c in cartoes:
+        d = c.to_dict()
+        try:
+            d['venc_fatura'] = datetime.strptime(d['venc_fatura'], '%Y-%m-%d').strftime('%d/%m/%Y')
+        except Exception:
+            pass
+        lista.append(d)
+    return jsonify(lista), 200
+
+
+@cartao_bp.route('/cartoes/<int:id_cartao>', methods=['GET'])
+def buscar_cartao(id_cartao):
+    cartao = Cartao.buscar_por_id(id_cartao)
+    if cartao is None:
+        return jsonify({'erro': 'Cartão não encontrado'}), 404
+
+    d = cartao.to_dict()
     try:
-    # Verifica se o ID do usuário do token corresponde ao ID passado na URL
-        if usuario_id != id_usuario:
-            return jsonify({'erro': 'Você não tem permissão para acessar os cartões deste usuário'}), 403
+        d['venc_fatura'] = datetime.strptime(d['venc_fatura'], '%Y-%m-%d').strftime('%d/%m/%Y')
+    except Exception:
+        pass
 
-        # Se os IDs baterem, buscamos os cartões desse usuário
-        cartoes = Cartao.buscar_por_usuario(id_usuario)
-        if cartoes:
-            return jsonify({'cartoes': [cartao.to_dict() for cartao in cartoes]}), 200
-        else:
-            return jsonify({'erro': 'Nenhum cartão encontrado para este usuário'}), 404
-    except Exception as e:
-        return jsonify({'erro': f'Erro ao listar cartões do usuário: {str(e)}'}), 500
+    return jsonify(d), 200
 
-#PUT: atualiza cartao por ID
+@cartao_bp.route('/cartoes/usuario/<int:id_usuario>', methods=['GET'])
 @token_required
-@cartao_bp.route('/cartao/<int:id_cartao>', methods=['PUT'])
-def atualizar_cartao(id_cartao):
-    dados = request.get_json()
+def listar_cartoes_usuario(usuario_id_token, id_usuario):
+    # Segurança: só permite listar os próprios cartões
+    if usuario_id_token != id_usuario:
+        return jsonify({'erro': 'Acesso não autorizado a cartões de outro usuário'}), 403
 
-    if not Cartao.buscar_por_id(id_cartao):
-        return jsonify({'erro': 'Cartao não encontrado'}), 404
-    
-    permitidos = {'limite', 'venc_fatura'}
-
-    campos = {
-        key: value for key, value in dados.items() 
-        if key in permitidos
-    }
-
-    if not campos:
-        return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400
-    
-    if Cartao.atualizar(id_cartao, campos):
-        return jsonify({'mensagem': f'Cartão {id_cartao} atualizado com sucesso'}), 200
-    else:
-        return jsonify({'erro': 'Erro ao atualizar cartão'}), 500
-
-#DELETE: deleta cartao por ID 
-@token_required
-@cartao_bp.route('/cartao/<int:id_cartao>', methods=['DELETE'])
-def deletar_cartao_por_id(id_cartao):
-    try:
-        if  Cartao.deletar_por_id(id_cartao):
-            return jsonify({'mensagem':f'Cartão de id {id_cartao} excluído com sucesso!'}), 200
-        else:
-            return jsonify({'erro': 'Cartão não encontrado'}), 404
-    except Exception as e:
-        return jsonify({'erro': f'Erro ao buscar cartão: {str(e)}'}), 500
+    cartoes = Cartao.listar_por_usuario(id_usuario)
+    lista = []
+    for c in cartoes:
+        d = c.to_dict()
+        try:
+            d['venc_fatura'] = datetime.strptime(d['venc_fatura'], '%Y-%m-%d').strftime('%d/%m/%Y')
+        except Exception:
+            pass
+        lista.append(d)
+    return jsonify(lista), 200

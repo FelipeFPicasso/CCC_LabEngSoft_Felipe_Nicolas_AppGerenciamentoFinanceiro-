@@ -79,19 +79,19 @@ def criar_tabelas():
                 id SERIAL PRIMARY KEY,
                 tipo VARCHAR(255)
             );""",
-            """CREATE TABLE IF NOT EXISTS cartao (
-                id SERIAL PRIMARY KEY,
-                limite INT,
-                venc_fatura DATE
-            );""",
             """CREATE TABLE IF NOT EXISTS conta (
                 id SERIAL PRIMARY KEY,
                 nome_banco VARCHAR(255),
                 saldo_inicial NUMERIC(10,2),
-                fk_id_cartao INT,
                 fk_id_usuario INT,
-                CONSTRAINT fk_id_cartao FOREIGN KEY (fk_id_cartao) REFERENCES cartao(id),
                 CONSTRAINT fk_id_usuario FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id)
+            );""",
+            """CREATE TABLE IF NOT EXISTS cartao (
+                id SERIAL PRIMARY KEY,
+                limite INT,
+                venc_fatura DATE,
+                fk_id_conta INT,
+                CONSTRAINT fk_cartao_conta FOREIGN KEY (fk_id_conta) REFERENCES conta(id)
             );""",
             """CREATE TABLE IF NOT EXISTS limite (
                 id SERIAL PRIMARY KEY,

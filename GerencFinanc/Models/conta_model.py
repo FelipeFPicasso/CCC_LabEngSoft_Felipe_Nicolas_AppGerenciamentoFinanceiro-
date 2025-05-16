@@ -7,19 +7,17 @@ class Conta:
     def _conectar():
         return conectar_financeiro()
 
-    def __init__(self, nome_banco, saldo_inicial, fk_id_usuario, fk_id_cartao):
+    def __init__(self, nome_banco, saldo_inicial, fk_id_usuario):
         self.nome_banco = nome_banco
         self.saldo_inicial = saldo_inicial
-        self.fk_id_usuario = fk_id_usuario  # Nome alterado para fk_id_usuario
-        self.fk_id_cartao = fk_id_cartao  # Nome alterado para fk_id_cartao
+        self.fk_id_usuario = fk_id_usuario
 
     def to_dict(self):
         return {
             'id': self.id,
             'nome_banco': self.nome_banco,
             'saldo_inicial': self.saldo_inicial,
-            'fk_id_usuario': self.fk_id_usuario,  # Retorna o campo com o nome correto no banco
-            'fk_id_cartao': self.fk_id_cartao  # Retorna o campo com o nome correto no banco
+            'fk_id_usuario': self.fk_id_usuario
         }
 
     @classmethod
@@ -29,10 +27,10 @@ class Conta:
             cursor = conn.cursor()
 
             query = sql.SQL("""
-                INSERT INTO conta (nome_banco, saldo_inicial, fk_id_usuario, fk_id_cartao)
-                VALUES (%s, %s, %s, %s) RETURNING id
+                INSERT INTO conta (nome_banco, saldo_inicial, fk_id_usuario)
+                VALUES (%s, %s, %s) RETURNING id
             """)
-            cursor.execute(query, (conta.nome_banco, conta.saldo_inicial, conta.fk_id_usuario, conta.fk_id_cartao))
+            cursor.execute(query, (conta.nome_banco, conta.saldo_inicial, conta.fk_id_usuario))
 
             conta_id = cursor.fetchone()[0]
             conn.commit()
@@ -52,13 +50,12 @@ class Conta:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = "SELECT * FROM conta"
-            cursor.execute(query)
+            cursor.execute("SELECT * FROM conta")
             contas_data = cursor.fetchall()
 
             contas = []
             for c in contas_data:
-                conta = Conta(c[1], c[2], c[3], c[4])  # Ajustado para usar fk_id_usuario e fk_id_cartao
+                conta = Conta(c[1], c[2], c[3])
                 conta.id = c[0]
                 contas.append(conta)
 
@@ -76,15 +73,14 @@ class Conta:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = sql.SQL("SELECT * FROM conta WHERE id = %s")
-            cursor.execute(query, (id_conta,))
+            cursor.execute("SELECT * FROM conta WHERE id = %s", (id_conta,))
             c = cursor.fetchone()
 
             cursor.close()
             conn.close()
 
             if c:
-                conta = Conta(c[1], c[2], c[3], c[4])  # Ajustado para usar fk_id_usuario e fk_id_cartao
+                conta = Conta(c[1], c[2], c[3])
                 conta.id = c[0]
                 return conta
             return None
@@ -98,13 +94,12 @@ class Conta:
             conn = cls._conectar()
             cursor = conn.cursor()
 
-            query = sql.SQL("SELECT * FROM conta WHERE fk_id_usuario = %s")
-            cursor.execute(query, (id_usuario,))
+            cursor.execute("SELECT * FROM conta WHERE fk_id_usuario = %s", (id_usuario,))
             contas_data = cursor.fetchall()
 
             contas = []
             for c in contas_data:
-                conta = Conta(c[1], c[2], c[3], c[4])  # Ajustado para usar fk_id_usuario e fk_id_cartao
+                conta = Conta(c[1], c[2], c[3])
                 conta.id = c[0]
                 contas.append(conta)
 
@@ -115,13 +110,13 @@ class Conta:
         except Exception as e:
             print(f"Erro ao listar contas por usuário: {e}")
             return []
-        
+
     @classmethod
     def atualizar(cls, id_conta, campos):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
-            
+
             set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
             valores = list(campos.values()) + [id_conta]
 
@@ -136,7 +131,7 @@ class Conta:
         except Exception as e:
             print(f"Erro ao atualizar conta: {e}")
             return False
-        
+
     @classmethod
     def deletar_por_id(cls, id_conta):
         try:
@@ -145,7 +140,7 @@ class Conta:
 
             cursor.execute("DELETE FROM conta WHERE id = %s", (id_conta,))
             success = cursor.rowcount
-            
+
             conn.commit()
             cursor.close()
             conn.close()
