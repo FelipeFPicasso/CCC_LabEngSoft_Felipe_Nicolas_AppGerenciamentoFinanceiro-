@@ -1,7 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Flask
 from Models.conta_model import Conta
 from Utils.auth import token_required  # Importando o decorator de autenticação
 
+
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 conta_bp = Blueprint('conta', __name__)
 
 # POST: Criar uma nova conta
@@ -36,6 +41,9 @@ def listar_contas():
         return jsonify({'erro': f'Erro ao listar contas: {str(e)}'}), 500
 
 # GET: Listar conta por ID
+
+app = Flask(__name__)
+CORS(app)
 @conta_bp.route('/conta/<int:id_conta>', methods=['GET'])
 def listar_conta_por_id(id_conta):
     try:

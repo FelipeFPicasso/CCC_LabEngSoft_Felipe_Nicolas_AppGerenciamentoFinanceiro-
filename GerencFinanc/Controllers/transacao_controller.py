@@ -1,9 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Flask
 from Models.transacao_model import Transacao
 from Utils.auth import token_required
 import datetime
 import Utils.validations as validator
+from flask_cors import CORS
 
+app = Flask(__name__)
+CORS(app)
 transacao_bp = Blueprint('transacao', __name__)
 
 # POST: Criar nova transação

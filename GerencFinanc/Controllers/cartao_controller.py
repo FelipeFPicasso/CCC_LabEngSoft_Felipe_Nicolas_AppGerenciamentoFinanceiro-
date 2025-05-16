@@ -1,7 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Flask
 from Models.cartao_model import Cartao
 from Utils.auth import token_required  # Importando o decorator de autenticação
+from flask_cors import CORS
 
+app = Flask(__name__)
+CORS(app)
 cartao_bp = Blueprint('cartao', __name__)
 
 # POST: Criar um novo cartão

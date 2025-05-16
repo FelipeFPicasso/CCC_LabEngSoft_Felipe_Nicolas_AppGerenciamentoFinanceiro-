@@ -1,7 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Flask
 from Models.limite_model import Limite
 from Utils.auth import token_required
+from flask_cors import CORS
 
+app = Flask(__name__)
+CORS(app)
 limite_bp = Blueprint('limite', __name__)
 
 # POST: Criar um novo limite
