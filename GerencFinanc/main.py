@@ -8,6 +8,7 @@ from Controllers.limite_controller import limite_bp
 from Controllers.transacao_controller import transacao_bp
 from Controllers.saldo_controller import saldo_bp
 from Controllers.relatorio_controller import relatorio_transacao_bp
+from Controllers.dados_fixos_controller import dados_fixos_bp
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -23,6 +24,8 @@ app.register_blueprint(limite_bp)
 app.register_blueprint(transacao_bp)
 app.register_blueprint(saldo_bp)
 app.register_blueprint(relatorio_transacao_bp)
+
+app.register_blueprint(dados_fixos_bp)
 
 if __name__ == '__main__':
     validar_estrutura_db()

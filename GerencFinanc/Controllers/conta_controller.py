@@ -44,10 +44,11 @@ def listar_conta_por_id(id_conta):
     except Exception as e:
         return jsonify({'erro': f'Erro ao buscar conta: {str(e)}'}), 500
 
-@conta_bp.route('/conta/usuario/<int:id_usuario>', methods=['GET'])
-def listar_contas_por_usuario(id_usuario):
+@conta_bp.route('/contas/usuario', methods=['GET'])
+@token_required
+def listar_contas_usuario_token(usuario_id):
     try:
-        contas = Conta.listar_por_usuario(id_usuario)
+        contas = Conta.listar_por_usuario(usuario_id)
         if contas:
             return jsonify({'contas': [conta.to_dict() for conta in contas]}), 200
         else:

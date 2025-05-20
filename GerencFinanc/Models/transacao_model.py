@@ -1,7 +1,8 @@
 from Database.conexao import conectar_financeiro
 
 class Transacao:
-    def __init__(self, descricao, valor, data, fk_id_usuario, fk_id_tipo_transacao, fk_id_conta, fk_id_categoria_transacao):
+    def __init__(self, descricao, valor, data, fk_id_usuario,
+                 fk_id_tipo_transacao, fk_id_conta, fk_id_categoria_transacao):
         self.descricao = descricao
         self.valor = valor
         self.data = data
@@ -22,24 +23,96 @@ class Transacao:
             'fk_id_categoria_transacao': self.fk_id_categoria_transacao
         }
 
+    @staticmethod
+    def obter_id_conta_por_nome(nome_banco):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM conta WHERE nome_banco = %s", (nome_banco,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if resultado:
+                return resultado[0]
+            return None
+        except Exception as e:
+            print(f"Erro ao buscar id da conta pelo nome: {e}")
+            return None
+
+    @staticmethod
+    def obter_id_categoria_por_nome(nome_categoria):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM categoria_transacao WHERE categoria = %s", (nome_categoria,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if resultado:
+                return resultado[0]
+            return None
+        except Exception as e:
+            print(f"Erro ao buscar id da categoria pelo nome: {e}")
+            return None
+
+    @staticmethod
+    def obter_id_tipo_por_nome(nome_tipo):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM tipo_transacao WHERE tipo = %s", (nome_tipo,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if resultado:
+                return resultado[0]
+            return None
+        except Exception as e:
+            print(f"Erro ao buscar id do tipo pelo nome: {e}")
+            return None
+
     @classmethod
     def adicionar(cls, transacao):
+        # Antes de inserir, converte os nomes para ids
+        id_conta = transacao.fk_id_conta
+        id_categoria = transacao.fk_id_categoria_transacao
+        id_tipo = transacao.fk_id_tipo_transacao
+
+        # Se foram passados nomes, tenta buscar os IDs
+        if isinstance(id_conta, str):
+            id_conta = cls.obter_id_conta_por_nome(id_conta)
+            if id_conta is None:
+                print("Conta não encontrada pelo nome.")
+                return None
+
+        if isinstance(id_categoria, str):
+            id_categoria = cls.obter_id_categoria_por_nome(id_categoria)
+            if id_categoria is None:
+                print("Categoria não encontrada pelo nome.")
+                return None
+
+        if isinstance(id_tipo, str):
+            id_tipo = cls.obter_id_tipo_por_nome(id_tipo)
+            if id_tipo is None:
+                print("Tipo não encontrado pelo nome.")
+                return None
+
         try:
             conn = conectar_financeiro()
             cursor = conn.cursor()
             cursor.execute("""
-                           INSERT INTO transacao (descricao, valor, data, fk_id_usuario, fk_id_tipo_transacao,
-                                                  fk_id_conta, fk_id_categoria_transacao)
-                           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;
-                           """, (
-                               transacao.descricao,
-                               transacao.valor,
-                               transacao.data,
-                               transacao.fk_id_usuario,
-                               transacao.fk_id_tipo_transacao,
-                               transacao.fk_id_conta,
-                               transacao.fk_id_categoria_transacao
-                           ))
+                INSERT INTO transacao (descricao, valor, data, fk_id_usuario, fk_id_tipo_transacao,
+                                       fk_id_conta, fk_id_categoria_transacao)
+                VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;
+            """, (
+                transacao.descricao,
+                transacao.valor,
+                transacao.data,
+                transacao.fk_id_usuario,
+                id_tipo,
+                id_conta,
+                id_categoria
+            ))
             id_inserido = cursor.fetchone()[0]
             conn.commit()
             cursor.close()

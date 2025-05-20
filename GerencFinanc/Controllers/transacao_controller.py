@@ -1,4 +1,6 @@
 from flask import Blueprint, request, jsonify, Flask
+
+from Database.conexao import conectar_financeiro
 from Models.transacao_model import Transacao
 from Utils.auth import token_required
 import datetime
@@ -18,32 +20,65 @@ def criar_transacao(usuario_id):
     descricao = dados.get('descricao')
     valor = dados.get('valor')
     data = dados.get('data')
-    fk_id_conta = dados.get('fk_id_conta')
-    fk_id_categoria_transacao = dados.get('fk_id_categoria_transacao')
-    fk_id_tipo_transacao = dados.get('fk_id_tipo_transacao')
+    nome_banco = dados.get('nome_banco')
+    nome_categoria = dados.get('nome_categoria')
+    nome_tipo = dados.get('nome_tipo')
 
-    if not all([descricao, valor, data, fk_id_conta, fk_id_categoria_transacao, fk_id_tipo_transacao]):
+    if not all([descricao, valor, data, nome_banco, nome_categoria, nome_tipo]):
         return jsonify({'erro': 'Todos os campos são obrigatórios'}), 400
 
     validator.valida_data(data)
 
-    # Verificar o tipo da transação e ajustar o valor
-    if fk_id_tipo_transacao == 1:  # Suponha que '1' seja Receita
-        valor = abs(valor)  # Garante que o valor será positivo para receitas
-    elif fk_id_tipo_transacao == 2:  # Suponha que '2' seja Despesa
-        valor = -abs(valor)  # Garante que o valor será negativo para despesas
-
-    nova_transacao = Transacao(
-        descricao,
-        valor,
-        data,
-        usuario_id,
-        fk_id_tipo_transacao,
-        fk_id_conta,
-        fk_id_categoria_transacao
-    )
-
     try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+
+        # Buscar id da conta pelo nome_banco e usuario_id (para garantir que pertence ao usuário)
+        cursor.execute(
+            "SELECT id FROM conta WHERE nome_banco = %s AND fk_id_usuario = %s",
+            (nome_banco, usuario_id)
+        )
+        conta = cursor.fetchone()
+        if not conta:
+            return jsonify({'erro': f'Conta com nome_banco "{nome_banco}" não encontrada para o usuário'}), 404
+        fk_id_conta = conta[0]
+
+        # Buscar id da categoria pelo nome_categoria
+        cursor.execute(
+            "SELECT id FROM categoria_transacao WHERE categoria = %s",
+            (nome_categoria,)
+        )
+        categoria = cursor.fetchone()
+        if not categoria:
+            return jsonify({'erro': f'Categoria "{nome_categoria}" não encontrada'}), 404
+        fk_id_categoria_transacao = categoria[0]
+
+        # Buscar id do tipo pelo nome_tipo
+        cursor.execute(
+            "SELECT id FROM tipo_transacao WHERE tipo = %s",
+            (nome_tipo,)
+        )
+        tipo = cursor.fetchone()
+        if not tipo:
+            return jsonify({'erro': f'Tipo "{nome_tipo}" não encontrado'}), 404
+        fk_id_tipo_transacao = tipo[0]
+
+        # Ajustar valor conforme tipo (1=Receita, 2=Despesa)
+        if fk_id_tipo_transacao == 1:  # Receita
+            valor = abs(valor)
+        elif fk_id_tipo_transacao == 2:  # Despesa
+            valor = -abs(valor)
+
+        nova_transacao = Transacao(
+            descricao,
+            valor,
+            data,
+            usuario_id,
+            fk_id_tipo_transacao,
+            fk_id_conta,
+            fk_id_categoria_transacao
+        )
+
         id_transacao = Transacao.adicionar(nova_transacao)
         if id_transacao:
             return jsonify({
@@ -52,8 +87,13 @@ def criar_transacao(usuario_id):
             }), 201
         else:
             return jsonify({'erro': 'Erro ao criar transação, verifique os dados enviados.'}), 500
+
     except Exception as e:
         return jsonify({'erro': f'Erro ao criar transação: {str(e)}'}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
 
 # GET: Listar todas as transações
 @transacao_bp.route('/transacao', methods=['GET'])
