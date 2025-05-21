@@ -35,3 +35,5 @@ def get_relatorios_transacoes_por_usuario(usuario_id):
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+
+#teste_commit
