@@ -35,3 +35,5 @@ class Saldo:
         except Exception as e:
             print(f"Erro ao buscar saldo: {e}")
             return None
+
+

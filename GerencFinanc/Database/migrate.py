@@ -141,7 +141,14 @@ def criar_tabelas():
                 CONSTRAINT fk_rel_tipo FOREIGN KEY(fk_id_tipo_transacao) REFERENCES tipo_transacao(id),
                 CONSTRAINT fk_rel_conta FOREIGN KEY(fk_id_conta) REFERENCES conta(id),
                 CONSTRAINT fk_rel_categoria FOREIGN KEY(fk_id_categoria_transacao) REFERENCES categoria_transacao(id)
-            );"""
+            );""",
+            """CREATE TABLE IF NOT EXISTS saldo_atual_total (
+                id SERIAL PRIMARY KEY,
+                fk_id_usuario INT UNIQUE,
+                saldo NUMERIC(10,2) DEFAULT 0,
+                CONSTRAINT fk_usuario_total FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id)
+            );  
+            """
         ]
 
         for query in query_tabelas:
@@ -153,6 +160,8 @@ def criar_tabelas():
 
         criar_trigger_relatorio_transacao()
 
+        criar_trigger_saldo_total()
+        
         cursor.close()
         conn.close()
 
@@ -252,3 +261,44 @@ def criar_trigger_relatorio_transacao():
         print("Trigger de relatorio_transacao criada com sucesso")
     except Exception as e:
         print(f"Erro ao criar trigger de relatorio_transacao: {e}")
+
+def criar_trigger_saldo_total():
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+
+        comando_sql = """
+        CREATE OR REPLACE FUNCTION atualizar_saldo_total()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            -- Tenta atualizar o saldo total existente
+            UPDATE saldo_atual_total
+            SET saldo = saldo + NEW.valor
+            WHERE fk_id_usuario = NEW.fk_id_usuario;
+
+            -- Se nenhuma linha foi atualizada, insere um novo saldo total
+            IF NOT FOUND THEN
+                INSERT INTO saldo_atual_total (fk_id_usuario, saldo)
+                VALUES (NEW.fk_id_usuario, NEW.valor);
+            END IF;
+
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_atualizar_saldo_total ON transacao;
+
+        CREATE TRIGGER trigger_atualizar_saldo_total
+        AFTER INSERT ON transacao
+        FOR EACH ROW
+        EXECUTE FUNCTION atualizar_saldo_total();
+        """
+
+        cursor.execute(comando_sql)
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print("Trigger de saldo_atual_total criada com sucesso")
+    except Exception as e:
+        print(f"Erro ao criar trigger de saldo_atual_total: {e}")

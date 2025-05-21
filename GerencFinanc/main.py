@@ -1,4 +1,6 @@
 from flask import Flask
+
+from Controllers.saldo_total_controller import saldo_total_bp
 from Controllers.usuario_controller import usuario_bp
 from Controllers.login_controller import login_bp
 from Controllers.conta_controller import conta_bp
@@ -25,6 +27,7 @@ app.register_blueprint(transacao_bp)
 app.register_blueprint(saldo_bp)
 app.register_blueprint(relatorio_transacao_bp)
 
+app.register_blueprint(saldo_total_bp)
 app.register_blueprint(dados_fixos_bp)
 
 if __name__ == '__main__':

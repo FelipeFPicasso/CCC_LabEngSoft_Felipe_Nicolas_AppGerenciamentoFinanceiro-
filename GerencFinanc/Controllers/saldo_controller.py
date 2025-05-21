@@ -15,3 +15,5 @@ def obter_saldo_atual(fk_id_usuario, fk_id_conta):
     if saldo:
         return jsonify(saldo.to_dict()), 200
     return jsonify({'erro': 'Saldo não encontrado para esta conta'}), 404
+
+
