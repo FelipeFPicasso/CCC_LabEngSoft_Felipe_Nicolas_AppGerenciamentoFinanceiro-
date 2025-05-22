@@ -10,7 +10,7 @@ cartao_bp = Blueprint('cartao_bp', __name__)
 
 @cartao_bp.route('/cartoes', methods=['POST'])
 @token_required
-def criar_cartao():
+def criar_cartao(usuario_id):
     dados = request.json
     limite = dados.get('limite')
     venc_fatura = dados.get('venc_fatura')  # esperado formato dd/mm/yyyy
