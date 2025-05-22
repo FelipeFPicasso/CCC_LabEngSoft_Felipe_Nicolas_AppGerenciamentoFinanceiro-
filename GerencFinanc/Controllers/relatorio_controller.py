@@ -21,3 +21,19 @@ def get_relatorio_transacao(usuario_id, fk_id_transacao):
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+
+@relatorio_transacao_bp.route('/relatorio-transacao/usuario', methods=['GET'])
+@token_required
+def get_relatorios_transacoes_por_usuario(usuario_id):
+    try:
+        relatorios = RelatorioTransacao.buscar_por_id_usuario(usuario_id)
+
+        if relatorios:
+            return jsonify({"relatorios": relatorios}), 200
+        else:
+            return jsonify({"mensagem": "Nenhum relatório encontrado para o usuário."}), 404
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+#teste_commit
