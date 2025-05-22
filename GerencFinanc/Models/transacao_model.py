@@ -188,23 +188,56 @@ class Transacao:
             return []
 
     @classmethod
-    def atualizar(cls, fk_id_transacao, campos):
+    def atualizar(cls, id_transacao, dados):
         try:
+            campos_sql = []
+            valores = []
+
+            if 'descricao' in dados:
+                campos_sql.append("descricao = %s")
+                valores.append(dados['descricao'])
+
+            if 'valor' in dados:
+                campos_sql.append("valor = %s")
+                valores.append(dados['valor'])
+
+            if 'categoria' in dados:
+                id_categoria = cls.obter_id_categoria_por_nome(dados['categoria'])
+                if id_categoria is None:
+                    print("Categoria não encontrada.")
+                    return False
+                campos_sql.append("fk_id_categoria_transacao = %s")
+                valores.append(id_categoria)
+
+            if 'tipo' in dados:
+                id_tipo = cls.obter_id_tipo_por_nome(dados['tipo'])
+                if id_tipo is None:
+                    print("Tipo de transação não encontrado.")
+                    return False
+                campos_sql.append("fk_id_tipo_transacao = %s")
+                valores.append(id_tipo)
+
+            if not campos_sql:
+                print("Nenhum campo válido para atualizar.")
+                return False
+
+            valores.append(id_transacao)
+
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
-            set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
-            valores = list(campos.values()) + [fk_id_transacao]
+            query = f"UPDATE transacao SET {', '.join(campos_sql)} WHERE id = %s"
+            cursor.execute(query, valores)
 
-            cursor.execute(f"UPDATE transacao SET {set_clause} WHERE id = %s", valores)
-            success = cursor.rowcount
-
+            sucesso = cursor.rowcount > 0
             conn.commit()
-            conn.close()
             cursor.close()
-            return success > 0
+            conn.close()
+
+            return sucesso
+
         except Exception as e:
-            print(f"Erro ao atualizar transacao: {e}")
+            print(f"Erro ao atualizar transação: {e}")
             return False
 
     @classmethod
@@ -213,21 +246,18 @@ class Transacao:
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
-            # Verifica se há vínculos na tabela relatorio_transacao
-            cursor.execute("SELECT COUNT(*) FROM relatorio_transacao WHERE fk_id_transacao = %s", (id_transacao,))
-            if cursor.fetchone()[0] > 0:
-                print(f"Transação {id_transacao} está vinculada a um relatório.")
-                cursor.close()
-                conn.close()
-                return False
+            # Deleta os relatórios vinculados primeiro
+            cursor.execute("DELETE FROM relatorio_transacao WHERE fk_id_transacao = %s", (id_transacao,))
 
+            # Depois deleta a transação
             cursor.execute("DELETE FROM transacao WHERE id = %s", (id_transacao,))
-            success = cursor.rowcount
+            sucesso = cursor.rowcount > 0
 
             conn.commit()
             cursor.close()
             conn.close()
-            return success > 0
+
+            return sucesso
         except Exception as e:
-            print(f"Erro ao deletar transacao: {e}")
+            print(f"Erro ao deletar transação: {e}")
             return False

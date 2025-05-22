@@ -138,35 +138,79 @@ def atualizar_transacao(usuario_id, fk_id_transacao):
     try:
         dados = request.get_json()
 
-        if not Transacao.buscar_por_id(fk_id_transacao):
-            return jsonify({'erro': 'Transação não encontrada'})
+        transacao = Transacao.buscar_por_id(fk_id_transacao)
 
-        permitidos = {'descricao', 'valor', 'data', 'fk_id_tipo_transacao', 'fk_id_conta', 'fk_id_categoria_transacao'}
-        campos = {key: value for key, value in dados.items() if key in permitidos}
+        if not transacao:
+            return jsonify({'erro': 'Transação não encontrada'}), 404
 
-        for campo, valor in campos.items():
-            if campo == 'data':
-                validator.valida_data(valor)
-            
+        # Corrigido para acessar atributo do objeto
+        if transacao.fk_id_usuario != usuario_id:
+            return jsonify({'erro': 'Usuário não autorizado a alterar esta transação'}), 403
+
+        # Permite esses campos do JSON, mapeando categoria e tipo para os ids
+        permitidos = {'descricao', 'valor', 'data', 'categoria', 'tipo'}
+
+        campos = {}
+        for key in permitidos:
+            if key in dados:
+                campos[key] = dados[key]
+
+        # Converte categoria e tipo de nome para id
+        if 'categoria' in campos:
+            id_categoria = Transacao.obter_id_categoria_por_nome(campos['categoria'])
+            if id_categoria is None:
+                return jsonify({'erro': 'Categoria não encontrada'}), 400
+            campos['fk_id_categoria_transacao'] = id_categoria
+            del campos['categoria']
+
+        if 'tipo' in campos:
+            id_tipo = Transacao.obter_id_tipo_por_nome(campos['tipo'])
+            if id_tipo is None:
+                return jsonify({'erro': 'Tipo não encontrado'}), 400
+            campos['fk_id_tipo_transacao'] = id_tipo
+            del campos['tipo']
+
+        # Validar data se existir
+        if 'data' in campos:
+            validator.valida_data(campos['data'])
+
         if not campos:
             return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400
 
-        if Transacao.atualizar(fk_id_transacao, campos):
+        atualizado = Transacao.atualizar(fk_id_transacao, campos)
+
+        if atualizado:
             return jsonify({'mensagem': f'Transação {fk_id_transacao} atualizada com sucesso!'}), 200
         else:
-            return jsonify({'erro': 'Erro ao atualizar no banco'})
+            return jsonify({'erro': 'Erro ao atualizar no banco'}), 500
+
     except Exception as e:
-        return jsonify({'erro': 'Erro ao atualizar transação'}), 500
+        print(f"Erro ao atualizar transacao: {e}")
+        return jsonify({'erro': 'Erro interno ao atualizar transação'}), 500
+
 
 # DELETE: Deletar transação
-@token_required
 @transacao_bp.route('/transacao/<int:id_transacao>', methods=['DELETE'])
-def deletar_transacao(id_transacao):
+@token_required
+def deletar_transacao(usuario_id, id_transacao):
     try:
-        if Transacao.deletar(id_transacao):
-            return jsonify({'mensagem': f'Transação de id {id_transacao} excluída com sucesso!'})
+        transacao = Transacao.buscar_por_id(id_transacao)
+
+        if not transacao:
+            return jsonify({'erro': 'Transação não encontrada'}), 404
+
+        # Corrigido aqui:
+        if transacao.fk_id_usuario != usuario_id:
+            return jsonify({'erro': 'Usuário não autorizado a excluir esta transação'}), 403
+
+        deletado = Transacao.deletar(id_transacao)
+
+        if deletado:
+            return jsonify({'mensagem': f'Transação de id {id_transacao} excluída com sucesso!'}), 200
         else:
-            return jsonify({'mensagem': 'Erro ao atualizar banco'})
+            return jsonify({'erro': 'Erro ao excluir transação'}), 500
     except Exception as e:
-        return jsonify('Erro ao deletar transação'), 500
+        print(f"Erro ao deletar transacao: {e}")
+        return jsonify({'erro': 'Erro interno ao deletar transação'}), 500
+
 

@@ -161,6 +161,8 @@ def criar_tabelas():
         criar_trigger_relatorio_transacao()
 
         criar_trigger_saldo_total()
+
+        criar_trigger_update_delete()
         
         cursor.close()
         conn.close()
@@ -302,3 +304,66 @@ def criar_trigger_saldo_total():
         print("Trigger de saldo_atual_total criada com sucesso")
     except Exception as e:
         print(f"Erro ao criar trigger de saldo_atual_total: {e}")
+
+
+def criar_trigger_update_delete():
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+
+        comando_sql = """
+        -- Função para UPDATE
+        CREATE OR REPLACE FUNCTION atualizar_saldo_transacao_update()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            UPDATE saldo_atual_total
+            SET saldo = saldo - OLD.valor + NEW.valor
+            WHERE fk_id_usuario = NEW.fk_id_usuario;
+
+            UPDATE saldo_atual
+            SET saldo = saldo - OLD.valor + NEW.valor
+            WHERE fk_id_usuario = NEW.fk_id_usuario
+              AND fk_id_conta = NEW.fk_id_conta;
+
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_update_transacao_saldo ON transacao;
+        CREATE TRIGGER trigger_update_transacao_saldo
+        AFTER UPDATE ON transacao
+        FOR EACH ROW
+        EXECUTE FUNCTION atualizar_saldo_transacao_update();
+
+        -- Função para DELETE
+        CREATE OR REPLACE FUNCTION atualizar_saldo_transacao_delete()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            UPDATE saldo_atual_total
+            SET saldo = saldo - OLD.valor
+            WHERE fk_id_usuario = OLD.fk_id_usuario;
+
+            UPDATE saldo_atual
+            SET saldo = saldo - OLD.valor
+            WHERE fk_id_usuario = OLD.fk_id_usuario
+              AND fk_id_conta = OLD.fk_id_conta;
+
+            RETURN OLD;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_delete_transacao_saldo ON transacao;
+        CREATE TRIGGER trigger_delete_transacao_saldo
+        AFTER DELETE ON transacao
+        FOR EACH ROW
+        EXECUTE FUNCTION atualizar_saldo_transacao_delete();
+        """
+
+        cursor.execute(comando_sql)
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print("Triggers de UPDATE e DELETE criadas com sucesso")
+    except Exception as e:
+        print(f"Erro ao criar triggers de UPDATE e DELETE: {e}")
