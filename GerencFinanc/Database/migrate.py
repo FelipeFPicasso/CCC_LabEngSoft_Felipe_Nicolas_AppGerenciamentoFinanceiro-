@@ -163,6 +163,8 @@ def criar_tabelas():
         criar_trigger_saldo_total()
 
         criar_trigger_update_delete()
+
+        criar_trigger_saldo_atual_conta()
         
         cursor.close()
         conn.close()
@@ -367,3 +369,48 @@ def criar_trigger_update_delete():
         print("Triggers de UPDATE e DELETE criadas com sucesso")
     except Exception as e:
         print(f"Erro ao criar triggers de UPDATE e DELETE: {e}")
+
+def criar_trigger_saldo_atual_conta():
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+
+        comando_sql = """
+                      CREATE \
+                      OR REPLACE FUNCTION atualizar_saldo_atual_conta()
+        RETURNS TRIGGER AS $$
+                      BEGIN
+            IF \
+                      TG_OP = 'INSERT' THEN
+                INSERT INTO saldo_atual (fk_id_usuario, fk_id_conta, saldo)
+                VALUES (NEW.fk_id_usuario, NEW.id, NEW.saldo_inicial);
+                      RETURN NEW;
+                      ELSIF \
+                      TG_OP = 'UPDATE' THEN
+                      UPDATE saldo_atual
+                      SET saldo = NEW.saldo_inicial
+                      WHERE fk_id_conta = NEW.id;
+                      RETURN NEW;
+                      END IF;
+                      RETURN NULL;
+                      END;
+        $$ \
+                      LANGUAGE plpgsql;
+
+                      DROP TRIGGER IF EXISTS trigger_saldo_atual_conta ON conta;
+
+                      CREATE TRIGGER trigger_saldo_atual_conta
+                          AFTER INSERT OR \
+                      UPDATE ON conta \
+                          FOR EACH ROW \
+                          EXECUTE FUNCTION atualizar_saldo_atual_conta(); \
+                      """
+
+        cursor.execute(comando_sql)
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print("Trigger para sincronizar saldo_inicial com saldo_atual criada com sucesso")
+    except Exception as e:
+        print(f"Erro ao criar trigger saldo_atual conta: {e}")

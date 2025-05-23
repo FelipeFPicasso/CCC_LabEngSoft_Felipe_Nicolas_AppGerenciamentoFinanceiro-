@@ -138,13 +138,35 @@ class Conta:
             conn = cls._conectar()
             cursor = conn.cursor()
 
+            # 1. Buscar saldo da conta que será excluída
+            cursor.execute("SELECT saldo_inicial FROM conta WHERE id = %s", (id_conta,))
+            resultado = cursor.fetchone()
+            if not resultado:
+                cursor.close()
+                conn.close()
+                return False  # Conta não existe
+            saldo_conta = resultado[0]
+
+            # 2. Atualizar saldo_atual_total subtraindo o saldo da conta excluída
+            cursor.execute("""
+                           UPDATE saldo_atual_total
+                           SET saldo = saldo - %s
+                           WHERE fk_id_usuario = %s
+                           """, (saldo_conta, id_conta))
+
+            # 3. Deletar registros na saldo_atual que referenciam essa conta
+            cursor.execute("DELETE FROM saldo_atual WHERE fk_id_conta = %s", (id_conta,))
+
+            # 4. Deletar a conta
             cursor.execute("DELETE FROM conta WHERE id = %s", (id_conta,))
-            success = cursor.rowcount
+            sucesso = cursor.rowcount
 
             conn.commit()
             cursor.close()
             conn.close()
-            return success > 0
+
+            return sucesso > 0
         except Exception as e:
-            print(f"Erro ao buscar conta: {e}")
+            print(f"Erro ao deletar conta: {e}")
             return False
+
