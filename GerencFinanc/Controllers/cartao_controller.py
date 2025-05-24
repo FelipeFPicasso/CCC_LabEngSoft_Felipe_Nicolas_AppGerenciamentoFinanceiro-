@@ -3,27 +3,36 @@ from Utils.auth import token_required
 from flask import Blueprint, request, jsonify, Flask
 from Models.cartao_model import Cartao
 from flask_cors import CORS
+from dateutil import parser
 
 app = Flask(__name__)
 CORS(app)
 cartao_bp = Blueprint('cartao_bp', __name__)
+
+def parse_venc_fatura(data_str):
+    try:
+        return datetime.strptime(data_str, '%d/%m/%Y').strftime('%Y-%m-%d')
+    except ValueError:
+        try:
+            dt = parser.parse(data_str)
+            return dt.strftime('%Y-%m-%d')
+        except Exception:
+            return None
 
 @cartao_bp.route('/cartoes', methods=['POST'])
 @token_required
 def criar_cartao(usuario_id):
     dados = request.json
     limite = dados.get('limite')
-    venc_fatura = dados.get('venc_fatura')  # esperado formato dd/mm/yyyy
+    venc_fatura = dados.get('venc_fatura')
     fk_id_conta = dados.get('fk_id_conta')
 
     if limite is None or venc_fatura is None or fk_id_conta is None:
         return jsonify({'erro': 'limite, venc_fatura e fk_id_conta são obrigatórios'}), 400
 
-    # Converter venc_fatura de dd/mm/yyyy para yyyy-mm-dd
-    try:
-        venc_fatura_us = datetime.strptime(venc_fatura, '%d/%m/%Y').strftime('%Y-%m-%d')
-    except ValueError:
-        return jsonify({'erro': 'Formato de data inválido para venc_fatura. Use dd/mm/yyyy'}), 400
+    venc_fatura_us = parse_venc_fatura(venc_fatura)
+    if venc_fatura_us is None:
+        return jsonify({'erro': 'Formato de data inválido para venc_fatura. Use dd/mm/yyyy ou formato válido de data'}), 400
 
     cartao = Cartao(limite, venc_fatura_us, fk_id_conta)
 

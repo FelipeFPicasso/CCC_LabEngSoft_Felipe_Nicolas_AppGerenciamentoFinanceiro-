@@ -1,8 +1,11 @@
+from datetime import datetime, date
+
 import psycopg2
 from psycopg2 import sql
 from Database.conexao import conectar_financeiro
 
 class Cartao:
+
     @staticmethod
     def _conectar():
         return conectar_financeiro()
@@ -13,11 +16,23 @@ class Cartao:
         self.venc_fatura = venc_fatura  # string no formato YYYY-MM-DD
         self.fk_id_conta = fk_id_conta  # ID da conta associada ao cartão
         self.nome_conta = None  # novo atributo
+
     def to_dict(self):
+        venc = self.venc_fatura
+        if isinstance(venc, (datetime, date)):
+            venc_formatado = venc.strftime('%d/%m/%Y')
+        else:
+            # Caso seja string, tenta parsear para datetime para formatar, senão retorna como está
+            try:
+                dt = datetime.strptime(venc, '%Y-%m-%d')
+                venc_formatado = dt.strftime('%d/%m/%Y')
+            except Exception:
+                venc_formatado = venc  # mantém o que veio, pode ser None ou string já formatada
+
         return {
             'id': self.id,
             'limite': self.limite,
-            'venc_fatura': self.venc_fatura,
+            'venc_fatura': venc_formatado,
             'fk_id_conta': self.fk_id_conta,
             'nome_conta': self.nome_conta
         }
