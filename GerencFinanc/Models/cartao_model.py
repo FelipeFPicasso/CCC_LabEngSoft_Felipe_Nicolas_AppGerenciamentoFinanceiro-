@@ -91,21 +91,31 @@ class Cartao:
 
     @classmethod
     def atualizar(cls, id_cartao, campos):
+        """
+        Atualiza os campos do cartão com id=id_cartao.
+        campos: dict com as colunas e seus novos valores.
+        Retorna True se atualizado com sucesso, False caso contrário.
+        """
+        if not campos:
+            return False
+
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
 
+            # Monta a cláusula SET dinamicamente para a query SQL
             set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
             valores = list(campos.values()) + [id_cartao]
 
             query = f"UPDATE cartao SET {set_clause} WHERE id = %s"
             cursor.execute(query, valores)
-            success = cursor.rowcount
+            success = cursor.rowcount > 0
 
             conn.commit()
             cursor.close()
             conn.close()
-            return success > 0
+
+            return success
         except Exception as e:
             print(f"Erro ao atualizar cartão: {e}")
             return False
@@ -156,3 +166,22 @@ class Cartao:
         except Exception as e:
             print(f"Erro ao listar cartões por usuário: {e}")
             return []
+
+    @classmethod
+    def deletar_por_id(cls, id_cartao):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM cartao WHERE id = %s", (id_cartao,))
+            sucesso = cursor.rowcount
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return sucesso > 0
+        except Exception as e:
+            print(f"Erro ao deletar cartão: {e}")
+            return False
+
