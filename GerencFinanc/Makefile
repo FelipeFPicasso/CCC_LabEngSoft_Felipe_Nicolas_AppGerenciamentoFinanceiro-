@@ -30,3 +30,11 @@ $(VENV_PATH):
 	$(PYTHON) -m venv $(VENV_PATH)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
+
+#start
+.PHONY: start
+start: postgres
+	$(VENV_PYTHON) main.py
+
+postgres:
+	service postgresql start
