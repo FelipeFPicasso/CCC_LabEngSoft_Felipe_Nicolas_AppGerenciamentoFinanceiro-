@@ -100,3 +100,78 @@ class RelatorioTransacao:
 
         except Exception as e:
             raise Exception(f"Erro ao buscar relatórios do usuário: {str(e)}")
+    
+    @staticmethod
+    def busca_resumo(usuario_id):
+        try:
+            conn = conectar_financeiro()
+            cur = conn.cursor()
+
+            cur.execute("""
+                SELECT
+                    SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END) AS total_receitas,
+                    SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END) AS total_despesas
+                FROM transacao
+                WHERE usuario_id = %s
+            """, (usuario_id,))
+
+            resultado = cur.fetchone()
+            cur.close()
+            conn.close()
+
+            receitas = float(resultado[0]) if resultado[0] else 0.0
+            despesas = float(resultado[1]) if resultado[1] else 0.0
+            saldo = receitas - despesas
+
+            return {
+                "receitas": receitas,
+                "gastos": despesas,
+                "saldo": saldo
+            }
+
+        except Exception as e:
+            print(f"Erro ao consultar resumo: {e}")
+            return None
+        
+    @staticmethod
+    def busca_por_categoria(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo='despesa'):
+        try:
+            conn = conectar_financeiro()
+            cur = conn.cursor()
+
+            query = """
+                SELECT categoria, SUM(valor)
+                FROM transacao
+                WHERE usuario_id = %s 
+            """
+            params = [usuario_id]
+
+            if tipo in ['gasto','despesa']:
+                query += "AND tipo = %s"
+                params.append(tipo)
+
+            if data_inicio:
+                query += " AND data >= %s"
+                params.append(data_inicio)
+
+            if data_fim:
+                query += " AND data <= %s"
+                params.append(data_fim)
+
+            if categorias and len(categorias) > 0:
+                query += f" AND categoria = ANY(%s)"
+                params.append(categorias)
+
+            query += " GROUP BY categoria ORDER BY SUM(valor) DESC"
+
+            cur.execute(query, params)
+            resultados = cur.fetchall()
+
+            cur.close()
+            conn.close()
+
+            return [{"categoria": r[0], "total": float(r[1])} for r in resultados]
+
+        except Exception as e:
+            print(f"Erro ao buscar gastos por categoria: {e}")
+            return None

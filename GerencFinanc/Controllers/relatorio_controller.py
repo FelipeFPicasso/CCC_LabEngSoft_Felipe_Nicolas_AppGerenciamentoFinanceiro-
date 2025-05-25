@@ -1,5 +1,5 @@
 # relatorio_controller.py
-from flask import Blueprint, jsonify, Flask
+from flask import Blueprint, jsonify, Flask, request
 from Utils.auth import token_required
 from Models.relatorio_model import RelatorioTransacao
 from flask_cors import CORS
@@ -36,4 +36,37 @@ def get_relatorios_transacoes_por_usuario(usuario_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-#teste_commit
+#Retorna transacoes baseadas em um resumo geral
+@relatorio_transacao_bp.route('/relatorio-transacao/resumo', methods=['GET'])
+@token_required
+def resumo_geral(usuario_id):
+    try:
+        resumo = RelatorioTransacao.busca_resumo(usuario_id)
+
+        if resumo is None:
+            return jsonify({"erro": "Erro ao obter resumo geral"}), 500
+        
+        return jsonify(resumo)
+        
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@relatorio_transacao_bp.route('/relatorio-transacao/categorias', methods=['GET'])
+@token_required
+def resumo_categoria(usuario_id):
+    try:
+        data_inicio = request.args.get("data_inicio")
+        data_fim = request.args.get("data_fim")
+        categorias = request.args.getlist("categorias") 
+        tipo = request.args.get("tipo")
+
+        dados = RelatorioTransacao.busca_por_categoria(usuario_id, data_inicio, data_fim, categorias, tipo)
+
+        if dados is None:
+            return jsonify({"erro": "Erro ao buscar dados"}), 500
+
+        return jsonify(dados)
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    
