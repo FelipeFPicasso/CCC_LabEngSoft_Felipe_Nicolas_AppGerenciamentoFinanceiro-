@@ -124,7 +124,7 @@ def recuperar_senha():
     codigo = str(randint(100000, 999999))
 
     # Expira em 15 minutos
-    expiracao = datetime.utcnow() + timedelta(minutes=15)  # ✅ corrigido aqui
+    expiracao = datetime.utcnow() + timedelta(minutes=15)
 
     # Armazena o código e sua expiração no banco
     Usuario.armazenar_codigo_recuperacao(email, codigo, expiracao)
