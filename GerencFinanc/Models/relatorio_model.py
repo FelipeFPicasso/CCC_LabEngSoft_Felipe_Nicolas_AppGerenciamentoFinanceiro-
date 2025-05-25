@@ -140,14 +140,16 @@ class RelatorioTransacao:
             cur = conn.cursor()
 
             query = """
-                SELECT categoria, SUM(valor)
-                FROM transacao
-                WHERE usuario_id = %s 
+                SELECT c.categoria AS categoria, tp.tipo AS tipo, data, SUM(t.valor)
+                FROM transacao t
+                JOIN categoria_transacao c ON c.id = t.fk_id_categoria_transacao
+                JOIN tipo_transacao tp ON tp.id = t.fk_id_tipo_transacao
+                WHERE t.fk_id_usuario = %s
             """
             params = [usuario_id]
 
-            if tipo in ['gasto','despesa']:
-                query += "AND tipo = %s"
+            if tipo in ['receita','despesa']:
+                query += " AND tipo = %s"
                 params.append(tipo)
 
             if data_inicio:
@@ -162,7 +164,7 @@ class RelatorioTransacao:
                 query += f" AND categoria = ANY(%s)"
                 params.append(categorias)
 
-            query += " GROUP BY categoria ORDER BY SUM(valor) DESC"
+            query += " GROUP BY categoria, tipo, data ORDER BY SUM(valor) DESC"
 
             cur.execute(query, params)
             resultados = cur.fetchall()
@@ -170,7 +172,7 @@ class RelatorioTransacao:
             cur.close()
             conn.close()
 
-            return [{"categoria": r[0], "total": float(r[1])} for r in resultados]
+            return [{"categoria": r[0], "tipo": r[1], "data": r[2], "total": float(r[3])} for r in resultados]
 
         except Exception as e:
             print(f"Erro ao buscar gastos por categoria: {e}")
