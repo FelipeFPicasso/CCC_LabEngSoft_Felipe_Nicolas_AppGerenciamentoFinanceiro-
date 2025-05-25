@@ -97,17 +97,21 @@ def listar_cartoes_usuario(usuario_id_token, id_usuario):
     return jsonify(lista), 200
 
 
-@cartao_bp.route('/cartoes/<int:id_cartao>', methods=['PUT'])
+@cartao_bp.route('/cartoes', methods=['PUT'])
 @token_required
-def atualizar_cartao(usuario_id, id_cartao):
+def atualizar_cartao(usuario_id):
     dados = request.json
     limite = dados.get('limite')
     venc_fatura = dados.get('venc_fatura')  # formato esperado dd/mm/yyyy
     fk_id_conta = dados.get('fk_id_conta')
 
-    # Verificar se pelo menos um campo foi enviado para atualização
-    if limite is None and venc_fatura is None and fk_id_conta is None:
-        return jsonify({'erro': 'Pelo menos um dos campos limite, venc_fatura ou fk_id_conta deve ser informado'}), 400
+    # fk_id_conta é obrigatório para saber qual cartão atualizar
+    if fk_id_conta is None:
+        return jsonify({'erro': 'fk_id_conta é obrigatório para atualizar o cartão'}), 400
+
+    # Verificar se pelo menos um campo para atualizar foi enviado (exceto fk_id_conta)
+    if limite is None and venc_fatura is None:
+        return jsonify({'erro': 'Pelo menos um dos campos limite ou venc_fatura deve ser informado'}), 400
 
     campos_atualizar = {}
 
@@ -122,13 +126,12 @@ def atualizar_cartao(usuario_id, id_cartao):
         except ValueError:
             return jsonify({'erro': 'Formato de data inválido para venc_fatura. Use dd/mm/yyyy'}), 400
 
-    if fk_id_conta is not None:
-        campos_atualizar['fk_id_conta'] = fk_id_conta
-
-    # Verifica se o cartão existe
-    cartao = Cartao.buscar_por_id(id_cartao)
+    # Busca o cartão pelo fk_id_conta
+    cartao = Cartao.buscar_por_fk_id_conta(fk_id_conta)
     if cartao is None:
-        return jsonify({'erro': 'Cartão não encontrado'}), 404
+        return jsonify({'erro': 'Cartão não encontrado para a conta informada'}), 404
+
+    id_cartao = cartao.id
 
     # Atualiza o cartão
     sucesso = Cartao.atualizar(id_cartao, campos_atualizar)
@@ -146,6 +149,7 @@ def atualizar_cartao(usuario_id, id_cartao):
         pass
 
     return jsonify(d), 200
+
 
 @cartao_bp.route('/cartoes/<int:id_cartao>', methods=['DELETE'])
 @token_required

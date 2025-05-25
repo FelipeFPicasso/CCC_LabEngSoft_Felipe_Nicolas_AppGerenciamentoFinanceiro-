@@ -85,15 +85,24 @@ class Cartao:
 
     @classmethod
     def buscar_por_id(cls, id_cartao):
+        """
+        Busca um cartão pelo seu ID e retorna um objeto Cartao.
+
+        Parâmetros:
+        - id_cartao (int): ID do cartão a ser buscado.
+
+        Retorna:
+        - Cartao: objeto Cartao encontrado.
+        - None: se não for encontrado ou ocorrer erro.
+        """
         try:
-            conn = cls._conectar()
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT id, limite, venc_fatura, fk_id_conta FROM cartao WHERE id = %s", (id_cartao,))
-            resultado = cursor.fetchone()
-
-            cursor.close()
-            conn.close()
+            with cls._conectar() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT id, limite, venc_fatura, fk_id_conta FROM cartao WHERE id = %s",
+                        (id_cartao,)
+                    )
+                    resultado = cursor.fetchone()
 
             if resultado:
                 cartao = Cartao(resultado[1], resultado[2], resultado[3])
@@ -101,7 +110,31 @@ class Cartao:
                 return cartao
             return None
         except Exception as e:
-            print(f"Erro ao buscar cartão: {e}")
+            print(f"Erro ao buscar cartão com ID {id_cartao}: {e}")
+            return None
+
+    @classmethod
+    def buscar_por_fk_id_conta(cls, fk_id_conta):
+        try:
+            conn = cls._conectar()
+            cursor = conn.cursor()
+
+            query = "SELECT id, limite, venc_fatura, fk_id_conta FROM cartao WHERE fk_id_conta = %s"
+            cursor.execute(query, (fk_id_conta,))
+            row = cursor.fetchone()
+
+            cursor.close()
+            conn.close()
+
+            if row:
+                id_cartao, limite, venc_fatura, fk_id_conta = row
+                cartao = cls(limite, venc_fatura, fk_id_conta)
+                cartao.id = id_cartao
+                return cartao
+            else:
+                return None
+        except Exception as e:
+            print(f"Erro ao buscar cartão por fk_id_conta: {e}")
             return None
 
     @classmethod
@@ -181,22 +214,4 @@ class Cartao:
         except Exception as e:
             print(f"Erro ao listar cartões por usuário: {e}")
             return []
-
-    @classmethod
-    def deletar_por_id(cls, id_cartao):
-        try:
-            conn = cls._conectar()
-            cursor = conn.cursor()
-
-            cursor.execute("DELETE FROM cartao WHERE id = %s", (id_cartao,))
-            sucesso = cursor.rowcount
-
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            return sucesso > 0
-        except Exception as e:
-            print(f"Erro ao deletar cartão: {e}")
-            return False
 
