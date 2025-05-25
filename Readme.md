@@ -25,27 +25,27 @@
 - *URL*
   - localhost:8080
 - *Public*
-    - URL/usuario
+    - URL/usuarios
         - POST: /
     - URL/login
         - POST: /
 - *Private*
-    - URL/usuario
+    - URL/usuarios
         - GET: /
         - GET: /{id}
         - PUT: /{id}
         - DELETE: /{id}
-    - URL/conta
+    - URL/contas
         - GET: /
         - GET: /{id}
-        - GET: /usuario/{id}
+        - GET: /usuarios/{id}
         - POST: /
         - PUT: /{id}
         - DELETE: /{id}
-    - URL/cartao
+    - URL/cartoes
         - GET: /
         - GET: /{id}
-        - GET: /usuario/{id}
+        - GET: /usuarios/{id}
         - POST: /
         - PUT: /{id}
         - DELETE: /{id}
@@ -65,16 +65,22 @@
         - PUT: /{id}
         - DELETE: /{id}
     - URL/saldo_atual
-        - GET: /usuario/{id}
+        - GET: /conta/{id}
+    - URL/saldo_total
+        - GET: /usuarios/{id}
     - URL/relatorio_transacao
         - GET: /usuario/{id}
         - GET: /conta/{id}
         - GET: /{id}
+    - URL/tipos-transacao
+        - GET: /
+    - URL/categoria-transacao
+        - GET: /
 
 
 ## Mapa da API:
 
-![Image](https://github.com/user-attachments/assets/ca8ecc68-3cda-4472-a541-84d6e3b29624)   
+![Image](https://github.com/user-attachments/assets/6758af81-fb2e-4064-b973-031891fe2a45)  
 
 ## Desenvolvedores:
 
