@@ -61,10 +61,11 @@ def listar_limite_por_id(id_limite):
 
 
 # GET: Listar limites do usuário pelo ID do usuário
-@limite_bp.route('/limite/usuario/<int:id_usuario>', methods=['GET'])
-def listar_limites_por_usuario(id_usuario):
+@limite_bp.route('/limite/usuario', methods=['GET'])
+@token_required
+def listar_limites_por_usuario(usuario_id):
     try:
-        limites = Limite.listar_por_usuario(id_usuario)
+        limites = Limite.listar_por_usuario(usuario_id)
         if limites:
             return jsonify({'limites': [limite.to_dict() for limite in limites]}), 200
         else:
