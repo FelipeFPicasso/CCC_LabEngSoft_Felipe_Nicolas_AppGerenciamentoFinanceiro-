@@ -72,3 +72,25 @@ def listar_limites_por_usuario(usuario_id):
             return jsonify({'erro': 'Nenhum limite encontrado para este usuário'}), 404
     except Exception as e:
         return jsonify({'erro': f'Erro ao listar limites do usuário: {str(e)}'}), 500
+
+
+@limite_bp.route('/limite/<int:id_limite>', methods=['DELETE'])
+@token_required
+def deletar_limite(usuario_id, id_limite):
+    try:
+        # Primeiro, buscar o limite para verificar se ele existe e pertence ao usuário
+        limite = Limite.buscar_por_id(id_limite)
+        if not limite:
+            return jsonify({'erro': 'Limite não encontrado'}), 404
+
+        # Opcional: Verificar se o limite pertence ao usuário que está tentando deletar
+        if limite.fk_id_usuario != usuario_id:
+            return jsonify({'erro': 'Acesso negado: limite não pertence ao usuário'}), 403
+
+        sucesso = Limite.deletar(id_limite)
+        if sucesso:
+            return jsonify({'mensagem': 'Limite deletado com sucesso'}), 200
+        else:
+            return jsonify({'erro': 'Erro ao deletar limite'}), 500
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao deletar limite: {str(e)}'}), 500
