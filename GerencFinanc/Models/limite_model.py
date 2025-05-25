@@ -1,7 +1,8 @@
 from Database.conexao import conectar_financeiro
 
 class Limite:
-    def __init__(self, titulo, valor, fk_id_recorrencia, fk_id_categoria_transacao, fk_id_usuario):
+    def __init__(self, id=None, titulo=None, valor=None, fk_id_recorrencia=None, fk_id_categoria_transacao=None, fk_id_usuario=None):
+        self.id = id
         self.titulo = titulo
         self.valor = valor
         self.fk_id_recorrencia = fk_id_recorrencia
@@ -10,6 +11,7 @@ class Limite:
 
     def to_dict(self):
         return {
+            'id': self.id,
             'titulo': self.titulo,
             'valor': self.valor,
             'fk_id_recorrencia': self.fk_id_recorrencia,
@@ -35,8 +37,14 @@ class Limite:
             conn.close()
 
             if resultado:
-                # AQUI, instanciamos o objeto Limite com os valores do banco
-                novo_limite = Limite(resultado[1], resultado[2], resultado[3], resultado[4], resultado[5])
+                novo_limite = Limite(
+                    id=resultado[0],
+                    titulo=resultado[1],
+                    valor=resultado[2],
+                    fk_id_usuario=resultado[3],
+                    fk_id_recorrencia=resultado[4],
+                    fk_id_categoria_transacao=resultado[5]
+                )
                 return novo_limite
             else:
                 return None
@@ -45,7 +53,6 @@ class Limite:
             print(f"Erro ao adicionar limite: {e}")
             return None
 
-    # METODO PARA LISTAR TODOS OS LIMITES
     @staticmethod
     def listar_todos():
         try:
@@ -57,7 +64,14 @@ class Limite:
 
             limites = []
             for resultado in resultados:
-                limites.append(Limite(resultado[1], resultado[2], resultado[3], resultado[4], resultado[5]))
+                limites.append(Limite(
+                    id=resultado[0],
+                    titulo=resultado[1],
+                    valor=resultado[2],
+                    fk_id_usuario=resultado[3],
+                    fk_id_recorrencia=resultado[4],
+                    fk_id_categoria_transacao=resultado[5]
+                ))
 
             cursor.close()
             conn.close()
@@ -66,7 +80,6 @@ class Limite:
             print(f"Erro ao listar limites: {e}")
             return []
 
-    # METODO PARA BUSCAR LIMITE PELO ID
     @staticmethod
     def buscar_por_id(id_limite):
         try:
@@ -80,26 +93,42 @@ class Limite:
             conn.close()
 
             if resultado:
-                return Limite(resultado[1], resultado[2], resultado[3], resultado[4], resultado[5])
+                return Limite(
+                    id=resultado[0],
+                    titulo=resultado[1],
+                    valor=resultado[2],
+                    fk_id_usuario=resultado[3],
+                    fk_id_recorrencia=resultado[4],
+                    fk_id_categoria_transacao=resultado[5]
+                )
             else:
                 return None
         except Exception as e:
             print(f"Erro ao buscar limite por ID: {e}")
             return None
 
-    # METODO PARA LISTAR LIMITES POR USUÁRIO
     @staticmethod
     def listar_por_usuario(id_usuario):
         try:
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
-            cursor.execute("SELECT id, titulo, valor, fk_id_usuario, fk_id_recorrencia, fk_id_categoria_transacao FROM limite WHERE fk_id_usuario = %s", (id_usuario,))
+            cursor.execute(
+                "SELECT id, titulo, valor, fk_id_usuario, fk_id_recorrencia, fk_id_categoria_transacao FROM limite WHERE fk_id_usuario = %s",
+                (id_usuario,)
+            )
             resultados = cursor.fetchall()
 
             limites = []
             for resultado in resultados:
-                limites.append(Limite(resultado[1], resultado[2], resultado[3], resultado[4], resultado[5]))
+                limites.append(Limite(
+                    id=resultado[0],
+                    titulo=resultado[1],
+                    valor=resultado[2],
+                    fk_id_usuario=resultado[3],
+                    fk_id_recorrencia=resultado[4],
+                    fk_id_categoria_transacao=resultado[5]
+                ))
 
             cursor.close()
             conn.close()
@@ -107,3 +136,21 @@ class Limite:
         except Exception as e:
             print(f"Erro ao listar limites por usuário: {e}")
             return []
+
+    @staticmethod
+    def deletar(id_limite):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM limite WHERE id = %s", (id_limite,))
+            conn.commit()
+
+            deletado = cursor.rowcount  # número de linhas afetadas
+            cursor.close()
+            conn.close()
+
+            return deletado > 0
+        except Exception as e:
+            print(f"Erro ao deletar limite: {e}")
+            return False
