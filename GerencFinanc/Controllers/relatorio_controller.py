@@ -3,6 +3,8 @@ from flask import Blueprint, jsonify, Flask, request
 from Utils.auth import token_required
 from Models.relatorio_model import RelatorioTransacao
 from flask_cors import CORS
+import Utils.validations as validator
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -54,11 +56,16 @@ def resumo_geral(usuario_id):
 @relatorio_transacao_bp.route('/relatorio-transacao/categorias', methods=['GET'])
 @token_required
 def resumo_categoria(usuario_id):
+    params = request.args.get
+
     try:
-        data_inicio = request.args.get("data_inicio")
-        data_fim = request.args.get("data_fim")
+        data_inicio = parse_data(params("data_inicio"))
+        data_fim = params("data_fim")
         categorias = request.args.getlist("categorias") 
-        tipo = request.args.get("tipo")
+        tipo = params("tipo")
+
+        validator.valida_data(data_inicio)
+        validator.valida_data(data_fim)
 
         dados = RelatorioTransacao.busca_por_categoria(usuario_id, data_inicio, data_fim, categorias, tipo)
 
@@ -70,3 +77,9 @@ def resumo_categoria(usuario_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
     
+def parse_data(data_str):
+    try:
+        return datetime.strptime(data_str, "%d/%m/%Y").date()
+    except (ValueError, TypeError):
+        return None  # ou lança uma exceção personalizada
+        

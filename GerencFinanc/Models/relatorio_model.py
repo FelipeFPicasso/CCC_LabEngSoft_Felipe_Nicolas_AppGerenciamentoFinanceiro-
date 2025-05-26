@@ -148,9 +148,9 @@ class RelatorioTransacao:
             """
             params = [usuario_id]
 
-            if tipo in ['Receita','Despesa']:
+            if tipo and tipo.capitalize() in ['Receita','Despesa']:
                 query += " AND tp.tipo = %s"
-                params.append(tipo)
+                params.append(tipo.capitalize())
 
             if data_inicio:
                 query += " AND data >= %s"
