@@ -149,7 +149,7 @@ class RelatorioTransacao:
             params = [usuario_id]
 
             if tipo in ['receita','despesa']:
-                query += " AND tipo = %s"
+                query += " AND tp.tipo = %s"
                 params.append(tipo)
 
             if data_inicio:
