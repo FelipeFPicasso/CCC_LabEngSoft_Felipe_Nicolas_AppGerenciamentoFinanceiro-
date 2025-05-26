@@ -154,3 +154,32 @@ class Limite:
         except Exception as e:
             print(f"Erro ao deletar limite: {e}")
             return False
+
+    @staticmethod
+    def atualizar(id, titulo, valor, fk_id_categoria_transacao, fk_id_recorrencia):
+        try:
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                           UPDATE limite
+                           SET titulo                    = %s,
+                               valor                     = %s,
+                               fk_id_categoria_transacao = %s,
+                               fk_id_recorrencia         = %s
+                           WHERE id = %s
+                           """, (titulo, valor, fk_id_categoria_transacao, fk_id_recorrencia, id))
+
+            conn.commit()
+
+            atualizado = cursor.rowcount > 0
+
+            cursor.close()
+            conn.close()
+
+            return atualizado
+
+        except Exception as e:
+            print(f"Erro ao atualizar limite: {e}")
+            return False
+

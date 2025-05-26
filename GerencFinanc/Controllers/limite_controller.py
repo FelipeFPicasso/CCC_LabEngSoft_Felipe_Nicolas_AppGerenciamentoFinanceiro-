@@ -94,3 +94,32 @@ def deletar_limite(usuario_id, id_limite):
             return jsonify({'erro': 'Erro ao deletar limite'}), 500
     except Exception as e:
         return jsonify({'erro': f'Erro ao deletar limite: {str(e)}'}), 500
+
+@limite_bp.route('/limite/<int:id_limite>', methods=['PUT'])
+@token_required
+def atualizar_limite(usuario_id, id_limite):
+    try:
+        data = request.get_json()
+        titulo = data.get('titulo')
+        valor = data.get('valor')
+        fk_categoria = data.get('fk_id_categoria_transacao')
+        fk_recorrencia = data.get('fk_id_recorrencia')
+
+        if not all([titulo, valor, fk_categoria, fk_recorrencia]):
+            return jsonify({'erro': 'Dados incompletos'}), 400
+
+        # Buscar limite para verificar existência e propriedade do usuário
+        limite = Limite.buscar_por_id(id_limite)
+        if not limite:
+            return jsonify({'erro': 'Limite não encontrado'}), 404
+        if limite.fk_id_usuario != usuario_id:
+            return jsonify({'erro': 'Acesso negado: limite não pertence ao usuário'}), 403
+
+        atualizado = Limite.atualizar(id_limite, titulo, valor, fk_categoria, fk_recorrencia)
+        if atualizado:
+            return jsonify({'mensagem': 'Limite atualizado com sucesso'}), 200
+        else:
+            return jsonify({'erro': 'Erro ao atualizar limite'}), 500
+
+    except Exception as e:
+        return jsonify({'erro': str(e)}), 500
