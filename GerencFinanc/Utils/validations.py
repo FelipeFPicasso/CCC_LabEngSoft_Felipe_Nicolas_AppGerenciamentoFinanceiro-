@@ -54,6 +54,7 @@ def valida_senha(password: str, return_details=False) -> bool:
 def valida_data(data, is_data_nasc: bool = False ) -> bool:
     try:
         data = datetime.datetime.strptime(data, '%d/%m/%Y').date()
+        print(data)
     except ValueError:
         abort(400, description='Data deve estar no formato DD/MM/YYYY')
 
@@ -67,4 +68,4 @@ def valida_data(data, is_data_nasc: bool = False ) -> bool:
         if idade < 18:
             abort(400, description='Usuário deve ter pelo menos 18 anos de idade')
 
-    return True
+    return data

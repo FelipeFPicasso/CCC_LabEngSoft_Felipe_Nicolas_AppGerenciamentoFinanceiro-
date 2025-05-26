@@ -134,11 +134,11 @@ class RelatorioTransacao:
             return None
         
     @staticmethod
-    def busca_por_categoria(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo='Despesa'):
+    def busca_por_categoria(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo=None):
         try:
             conn = conectar_financeiro()
             cur = conn.cursor()
-
+            
             query = """
                 SELECT c.categoria AS categoria, tp.tipo AS tipo, data, SUM(t.valor)
                 FROM transacao t
