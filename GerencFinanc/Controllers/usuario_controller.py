@@ -60,13 +60,23 @@ def listar_usuarios():
     return jsonify(usuarios), 200
 
 #GET: retorna usuarios cadastrados por ID 
-@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['GET'])
-def buscar_usuario_por_id(id_usuario):
+@usuario_bp.route('/usuario', methods=['GET'])
+@token_required
+def buscar_usuario_logado(id_usuario):
     usuario = busca_por_id(id_usuario)
 
-    if usuario:
-        return jsonify(usuario), 200
-    return jsonify({'erro': 'Usuário não encontrado'}), 404
+    if not usuario:
+        return jsonify({'erro': 'Usuário não encontrado'}), 404
+
+    dados_usuario = {
+        'id': usuario['id'],
+        'nome': usuario['nome'],
+        'email': usuario['email'],
+        'cpf': usuario['cpf'],
+        'data_nasc': usuario['data_nasc']
+    }
+
+    return jsonify(dados_usuario), 200
 
 #PUT: Atualiza informacoes de cadastro do usuario
 from datetime import datetime
