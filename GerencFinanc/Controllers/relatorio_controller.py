@@ -37,24 +37,10 @@ def get_relatorios_transacoes_por_usuario(usuario_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-#Retorna transacoes baseadas em um resumo geral
+#retorna resumo baseado em filtros  
 @relatorio_transacao_bp.route('/relatorio-transacao/resumo', methods=['GET'])
 @token_required
-def resumo_geral(usuario_id):
-    try:
-        resumo = RelatorioTransacao.busca_resumo(usuario_id)
-
-        if resumo is None:
-            return jsonify({"erro": "Erro ao obter resumo geral"}), 500
-        
-        return jsonify(resumo)
-        
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-
-@relatorio_transacao_bp.route('/relatorio-transacao/categorias', methods=['GET'])
-@token_required
-def resumo_categoria(usuario_id):
+def resumo_filtros(usuario_id):
     try:
         data_inicio = request.args.get("data_inicio")
         data_fim = request.args.get("data_fim")
@@ -64,7 +50,7 @@ def resumo_categoria(usuario_id):
         data_inicio = validator.valida_data(data_inicio)
         data_fim = validator.valida_data(data_fim)
 
-        dados = RelatorioTransacao.busca_por_categoria(usuario_id, data_inicio, data_fim, categorias, tipo)
+        dados = RelatorioTransacao.resumo(usuario_id, data_inicio, data_fim, categorias, tipo)
 
         if dados is None:
             return jsonify({"erro": "Erro ao buscar dados"}), 500
