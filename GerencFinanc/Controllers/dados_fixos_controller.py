@@ -35,3 +35,17 @@ def listar_categorias_transacao(usuario_id):
         return jsonify([{'id': c[0], 'nome': c[1]} for c in categorias]), 200
     except Exception as e:
         return jsonify({'erro': str(e)}), 500
+
+@dados_fixos_bp.route('/recorrencias', methods=['GET'])
+@token_required
+def listar_recorrencias(usuario_id):
+    try:
+        conn = conectar_financeiro()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, periodo FROM recorrencia ORDER BY id;")
+        recorrencias = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify([{'id': r[0], 'nome': r[1]} for r in recorrencias]), 200
+    except Exception as e:
+        return jsonify({'erro': str(e)}), 500
