@@ -134,7 +134,7 @@ class RelatorioTransacao:
             return None
         
     @staticmethod
-    def busca_por_categoria(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo='despesa'):
+    def busca_por_categoria(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo='Despesa'):
         try:
             conn = conectar_financeiro()
             cur = conn.cursor()
@@ -148,7 +148,7 @@ class RelatorioTransacao:
             """
             params = [usuario_id]
 
-            if tipo in ['receita','despesa']:
+            if tipo in ['Receita','Despesa']:
                 query += " AND tp.tipo = %s"
                 params.append(tipo)
 
