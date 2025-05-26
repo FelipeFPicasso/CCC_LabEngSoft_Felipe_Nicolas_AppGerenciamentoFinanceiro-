@@ -157,6 +157,11 @@ class Conta:
             # 3. Deletar registros na saldo_atual que referenciam essa conta
             cursor.execute("DELETE FROM saldo_atual WHERE fk_id_conta = %s", (id_conta,))
 
+            cursor.execute("DELETE FROM relatorio_transacao WHERE fk_id_conta = %s", (id_conta,))
+
+            cursor.execute("DELETE FROM transacao WHERE fk_id_conta = %s", (id_conta,))
+
+
             # 4. Deletar a conta
             cursor.execute("DELETE FROM conta WHERE id = %s", (id_conta,))
             sucesso = cursor.rowcount

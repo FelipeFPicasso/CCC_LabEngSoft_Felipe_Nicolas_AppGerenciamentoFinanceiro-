@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import datetime, timedelta
 import Utils.validations as validator
 from random import randint
+from Utils.auth import token_required
 from Utils.cod_recup_senha import gerar_codigo_recuperacao
 
 usuario_bp = Blueprint('usuario', __name__)
@@ -68,40 +69,48 @@ def buscar_usuario_por_id(id_usuario):
     return jsonify({'erro': 'Usuário não encontrado'}), 404
 
 #PUT: Atualiza informacoes de cadastro do usuario
-@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['PUT'])
+from datetime import datetime
+
+@usuario_bp.route('/usuarios', methods=['PUT'])
+@token_required
 def atualizar_usuario(id_usuario):
     dados = request.get_json()
 
     if not busca_por_id(id_usuario):
         return jsonify({'erro': 'Usuário não encontrado'}), 404
-    
-    permitidos = {'nome', 'email', 'senha', 'data_nasc'}
+
+    permitidos = {'nome', 'email', 'data_nasc'}
 
     campos = {
-        key: value for key, value in dados.items() 
+        key: value for key, value in dados.items()
         if key in permitidos
     }
 
-    for campo, valor in campos.items():
+    for campo, valor in list(campos.items()):
         if campo == 'email':
             validator.valida_email(valor)
-        if campo == 'senha':
-            validator.valida_senha(valor, return_details=True)
         if campo == 'data_nasc':
-            validator.valida_data_nasc(valor)
+            try:
+                validator.valida_data(valor)
+                valor_convertido = datetime.strptime(valor, '%d/%m/%Y').date()
+                campos[campo] = valor_convertido.isoformat()
+            except ValueError:
+                return jsonify({'erro': 'Formato de data inválido. Use dd/mm/aaaa.'}), 400
 
     if not campos:
-        return jsonify({'erro': 'Nenhum dado enviado para atualização'}), 400
-    
+        return jsonify({'erro': 'Nenhum dado permitido enviado para atualização'}), 400
+
     if Usuario.atualizar(id_usuario, campos):
         return jsonify({'mensagem': 'Usuário atualizado com sucesso'}), 200
     else:
         return jsonify({'erro': 'Erro ao atualizar usuário'}), 500
 
 
-@usuario_bp.route('/usuarios/<int:id_usuario>', methods=['DELETE'])
-def deletar_usuario(id_usuario):
 
+
+@usuario_bp.route('/usuarios', methods=['DELETE'])
+@token_required
+def deletar_usuario(id_usuario):
     if Usuario.deletar(id_usuario):
         return jsonify({'mensagem': 'Usuário deletado com sucesso'}), 200
     else:

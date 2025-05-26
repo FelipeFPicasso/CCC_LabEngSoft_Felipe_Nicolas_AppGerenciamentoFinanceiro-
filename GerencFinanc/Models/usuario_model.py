@@ -114,13 +114,13 @@ class Usuario:
         except Exception as e:
             print(f"Erro ao buscar usuário por email: {e}")
             return None
-        
+
     @classmethod
     def atualizar(cls, id_usuario, campos):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
-            
+
             set_clause = ', '.join(f"{col} = %s" for col in campos.keys())
             valores = list(campos.values()) + [id_usuario]
 
@@ -135,13 +135,31 @@ class Usuario:
         except Exception as e:
             print(f"Erro ao atualizar usuário: {e}")
             return False
-        
+
     @classmethod
     def deletar(cls, id_usuario):
         try:
             conn = cls._conectar()
             cursor = conn.cursor()
 
+            # Primeiro, deletar registros da relatorio_transacao que usam transações do usuário
+            cursor.execute("""
+                           DELETE
+                           FROM relatorio_transacao
+                           WHERE fk_id_transacao IN (SELECT id
+                                                            FROM transacao
+                                                            WHERE fk_id_usuario = %s)
+                           """, (id_usuario,))
+
+            # Depois, deletar os registros em cascata manual
+            cursor.execute("DELETE FROM transacao WHERE fk_id_usuario = %s", (id_usuario,))
+            cursor.execute("DELETE FROM saldo_atual WHERE fk_id_usuario = %s", (id_usuario,))
+            cursor.execute("DELETE FROM limite WHERE fk_id_usuario = %s", (id_usuario,))
+            cursor.execute("DELETE FROM conta WHERE fk_id_usuario = %s", (id_usuario,))
+            cursor.execute("DELETE FROM saldo_atual_total WHERE fk_id_usuario = %s", (id_usuario,))
+
+
+            # Por fim, deletar o usuário
             cursor.execute("DELETE FROM usuario WHERE id = %s", (id_usuario,))
             success = cursor.rowcount
 
@@ -150,7 +168,7 @@ class Usuario:
             conn.close()
             return success > 0
         except Exception as e:
-            print(f"Erro ao deletar usuário: {e}")
+            print(f"Erro ao deletar usuário e dados relacionados: {e}")
             return False
 
     @classmethod
