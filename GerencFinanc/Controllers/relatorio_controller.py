@@ -61,8 +61,8 @@ def resumo_categoria(usuario_id):
         categorias = request.args.getlist("categorias") 
         tipo = request.args.get("tipo")
         
-        validator.valida_data(data_inicio)
-        validator.valida_data(data_fim)
+        data_inicio = validator.valida_data(data_inicio)
+        data_fim = validator.valida_data(data_fim)
 
         dados = RelatorioTransacao.busca_por_categoria(usuario_id, data_inicio, data_fim, categorias, tipo)
 

@@ -51,10 +51,12 @@ def valida_senha(password: str, return_details=False) -> bool:
 
     return True
 
-def valida_data(data, is_data_nasc: bool = False ) -> bool:
+def valida_data(data, is_data_nasc: bool = False ) -> datetime:
+    if not data:
+        return
+
     try:
         data = datetime.datetime.strptime(data, '%d/%m/%Y').date()
-        print(data)
     except ValueError:
         abort(400, description='Data deve estar no formato DD/MM/YYYY')
 
