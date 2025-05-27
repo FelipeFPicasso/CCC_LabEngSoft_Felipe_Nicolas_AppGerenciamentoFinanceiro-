@@ -67,11 +67,12 @@ def listar_limites_por_usuario(usuario_id):
     try:
         limites = Limite.listar_por_usuario(usuario_id)
         if limites:
-            return jsonify({'limites': [limite.to_dict() for limite in limites]}), 200
+            return jsonify({'limites': limites}), 200  # <-- CORRIGIDO AQUI
         else:
             return jsonify({'erro': 'Nenhum limite encontrado para este usuário'}), 404
     except Exception as e:
         return jsonify({'erro': f'Erro ao listar limites do usuário: {str(e)}'}), 500
+
 
 
 @limite_bp.route('/limite/<int:id_limite>', methods=['DELETE'])

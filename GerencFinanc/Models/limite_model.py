@@ -113,22 +113,36 @@ class Limite:
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT id, titulo, valor, fk_id_usuario, fk_id_recorrencia, fk_id_categoria_transacao FROM limite WHERE fk_id_usuario = %s",
-                (id_usuario,)
-            )
+            cursor.execute("""
+                           SELECT l.id,
+                                  l.titulo,
+                                  l.valor,
+                                  l.fk_id_usuario,
+                                  l.fk_id_recorrencia,
+                                  r.periodo AS nome_recorrencia,
+                                  l.fk_id_categoria_transacao,
+                                  c.categoria AS nome_categoria
+                           FROM limite l
+                                    LEFT JOIN recorrencia r ON l.fk_id_recorrencia = r.id
+                                    LEFT JOIN categoria_transacao c ON l.fk_id_categoria_transacao = c.id
+                           WHERE l.fk_id_usuario = %s
+                           """, (id_usuario,))
+
             resultados = cursor.fetchall()
 
             limites = []
             for resultado in resultados:
-                limites.append(Limite(
-                    id=resultado[0],
-                    titulo=resultado[1],
-                    valor=resultado[2],
-                    fk_id_usuario=resultado[3],
-                    fk_id_recorrencia=resultado[4],
-                    fk_id_categoria_transacao=resultado[5]
-                ))
+                limite = {
+                    'id': resultado[0],
+                    'titulo': resultado[1],
+                    'valor': resultado[2],
+                    'fk_id_usuario': resultado[3],
+                    'fk_id_recorrencia': resultado[4],
+                    'nome_recorrencia': resultado[5],
+                    'fk_id_categoria_transacao': resultado[6],
+                    'nome_categoria': resultado[7]
+                }
+                limites.append(limite)
 
             cursor.close()
             conn.close()
