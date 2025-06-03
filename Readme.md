@@ -15,7 +15,7 @@
 
 ## Instalação:
 
-- git clone https://github.com/FelipeFPicasso/AppGerenciamentoFinanceiro.git
+- git clone https://github.com/FelipeFPicasso/CCC_LabEngSoft_Felipe_Nicolas_AppGerenciamentoFinanceiro-.git
 - pip install flask
 - pip install psycopg2-binary
 - pip install sqlalchemy
