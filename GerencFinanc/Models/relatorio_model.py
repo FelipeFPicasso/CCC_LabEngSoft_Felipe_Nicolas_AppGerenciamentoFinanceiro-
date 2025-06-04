@@ -129,7 +129,7 @@ class RelatorioTransacao:
                 params.append(data_fim)
 
             if categorias and len(categorias) > 0:
-                query += f" AND categoria = ANY(%s)"
+                query += " AND categoria = ANY(%s::text[])"
                 params.append(categorias)
 
             query += " GROUP BY categoria, tipo, data ORDER BY SUM(valor) DESC"
