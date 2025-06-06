@@ -37,8 +37,8 @@ def get_relatorios_transacoes_por_usuario(usuario_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-#retorna resumo baseado em filtros  
-@relatorio_transacao_bp.route('/relatorio-transacao/resumo', methods=['GET'])
+#retorna transacoes baseado em filtros  
+@relatorio_transacao_bp.route('/relatorio_transacao/filtro', methods=['GET'])
 @token_required
 def resumo_filtros(usuario_id):
     try:
@@ -50,7 +50,29 @@ def resumo_filtros(usuario_id):
         data_inicio = validator.valida_data(data_inicio)
         data_fim = validator.valida_data(data_fim)
 
-        dados = RelatorioTransacao.resumo(usuario_id, data_inicio, data_fim, categorias, tipo)
+        dados = RelatorioTransacao.filtro(usuario_id, data_inicio, data_fim, categorias, tipo)
+
+        if dados is None:
+            return jsonify({"erro": "Erro ao buscar dados"}), 500
+
+        return jsonify(dados)
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    
+#retorna transacoes baseado em filtros  
+@relatorio_transacao_bp.route('/relatorio_transacao/resumo-por-categoria', methods=['GET'])
+@token_required
+def resumo_por_categoria(usuario_id):
+    try:
+        data_inicio = request.args.get("data_inicio")
+        data_fim = request.args.get("data_fim")
+        tipo = request.args.get("tipo")
+        
+        data_inicio = validator.valida_data(data_inicio)
+        data_fim = validator.valida_data(data_fim)
+
+        dados = RelatorioTransacao.resumoCategoria(usuario_id, data_inicio, data_fim, tipo)
 
         if dados is None:
             return jsonify({"erro": "Erro ao buscar dados"}), 500

@@ -102,7 +102,7 @@ class RelatorioTransacao:
             raise Exception(f"Erro ao buscar relatórios do usuário: {str(e)}")
         
     @staticmethod
-    def resumo(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo=None):
+    def filtro(usuario_id, data_inicio=None, data_fim=None, categorias=None, tipo=None):
         try:
             conn = conectar_financeiro()
             cur = conn.cursor()
@@ -145,3 +145,49 @@ class RelatorioTransacao:
         except Exception as e:
             print(f"Erro ao buscar gastos por categoria: {e}")
             return None
+        
+    @staticmethod
+    def resumoCategoria(usuario_id, data_inicio=None, data_fim=None, tipo=None):
+        try: 
+            conn = conectar_financeiro()
+            cursor = conn.cursor()
+
+            query = """
+                SELECT c.categoria AS categoria, SUM(t.valor) AS total
+                FROM transacao t
+                JOIN categoria_transacao c ON c.id = t.fk_id_categoria_transacao
+                JOIN tipo_transacao tp ON tp.id = t.fk_id_tipo_transacao
+                WHERE t.fk_id_usuario = %s
+            """
+            params = [usuario_id]
+
+            if data_inicio:
+                query += " AND t.data >= %s"
+                params.append(data_inicio)
+
+            if data_fim:
+                query += " AND t.data <= %s"
+                params.append(data_fim)
+
+            if tipo and tipo.capitalize() in ['Receita', 'Despesa']:
+                query += " AND tp.tipo = %s"
+                params.append(tipo.capitalize())
+
+            query += " GROUP BY c.categoria ORDER BY total DESC"
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            cursor.close()
+            conn.close()
+
+            return [
+                {"categoria": row[0], "total": float(row[1])}
+                for row in rows
+            ]
+        except Exception as e:
+            print(f"Erro ao buscar resumo por categoria: {e}")
+            return None
+
+
+        
