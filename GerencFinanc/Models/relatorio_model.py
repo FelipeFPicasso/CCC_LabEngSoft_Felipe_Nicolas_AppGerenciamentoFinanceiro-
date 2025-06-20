@@ -129,9 +129,9 @@ class RelatorioTransacao:
                 params.append(data_fim)
 
             if categorias and len(categorias) > 0:
-                query += " AND categoria = ANY(%s::text[])"
+                query += " AND c.categoria = ANY(%s)"
                 params.append(categorias)
-
+                
             query += " GROUP BY categoria, tipo, data ORDER BY SUM(valor) DESC"
 
             cur.execute(query, params)
@@ -147,8 +147,8 @@ class RelatorioTransacao:
             return None
         
     @staticmethod
-    def resumoCategoria(usuario_id, data_inicio=None, data_fim=None, tipo=None):
-        try: 
+    def resumoCategoria(usuario_id, data_inicio=None, data_fim=None, tipo=None, categorias=None):
+        try:
             conn = conectar_financeiro()
             cursor = conn.cursor()
 
@@ -172,6 +172,10 @@ class RelatorioTransacao:
             if tipo and tipo.capitalize() in ['Receita', 'Despesa']:
                 query += " AND tp.tipo = %s"
                 params.append(tipo.capitalize())
+
+            if categorias:
+                query += " AND c.categoria IN %s"
+                params.append(tuple(categorias))
 
             query += " GROUP BY c.categoria ORDER BY total DESC"
 
