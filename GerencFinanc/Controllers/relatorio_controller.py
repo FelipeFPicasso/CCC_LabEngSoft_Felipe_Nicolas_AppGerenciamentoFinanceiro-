@@ -68,11 +68,13 @@ def resumo_por_categoria(usuario_id):
         data_inicio = request.args.get("data_inicio")
         data_fim = request.args.get("data_fim")
         tipo = request.args.get("tipo")
+        data_categorias = request.args.get("categorias")
+        categorias = data_categorias.split(",") if data_categorias else None
         
         data_inicio = validator.valida_data(data_inicio)
         data_fim = validator.valida_data(data_fim)
 
-        dados = RelatorioTransacao.resumoCategoria(usuario_id, data_inicio, data_fim, tipo)
+        dados = RelatorioTransacao.resumoCategoria(usuario_id, data_inicio, data_fim, tipo, categorias)
 
         if dados is None:
             return jsonify({"erro": "Erro ao buscar dados"}), 500
