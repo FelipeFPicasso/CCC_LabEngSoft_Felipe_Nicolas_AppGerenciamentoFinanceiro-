@@ -44,8 +44,9 @@ def resumo_filtros(usuario_id):
     try:
         data_inicio = request.args.get("data_inicio")
         data_fim = request.args.get("data_fim")
-        categorias = request.args.getlist("categorias") 
         tipo = request.args.get("tipo")
+        data_categorias = request.args.get("categorias")
+        categorias = data_categorias.split(",") if data_categorias else None
         
         data_inicio = validator.valida_data(data_inicio)
         data_fim = validator.valida_data(data_fim)
