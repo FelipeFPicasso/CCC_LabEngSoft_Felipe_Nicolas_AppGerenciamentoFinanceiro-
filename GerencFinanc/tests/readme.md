@@ -172,6 +172,28 @@ Os testes de sistema simulam a utilização da API por um usuário real através
 
 ---
 
+
+
+# Instalação de bibliotecas e ferramentas
+
+## Instale os requirements ou manualmente:
+
+    pip install -r requirements.txt
+
+## Manualmente:
+
+    pip install flask 
+
+    pip install pytest 
+
+    pip install pytest-flask
+
+    pip install pytest-cov
+
+    pip install psycopg2
+
+    pip install pyjwt
+
 # Executando os Testes
 
 ## Executar todos
