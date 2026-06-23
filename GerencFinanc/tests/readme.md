@@ -109,7 +109,7 @@ Foram testadas as seguintes classes:
 ### Resultado
 
 ```text
-35 testes unitários
+36 testes unitários
 ```
 
 ---
@@ -203,11 +203,11 @@ python -m pytest tests/tests_sistema.py -v
 # Quantidade Total
 
 ```text
-35 Testes Unitários
+36 Testes Unitários
 10 Testes de Integração
  6 Testes de Sistema
 ---------------------
-51 Testes Automatizados
+52 Testes Automatizados
 ```
 
 ---

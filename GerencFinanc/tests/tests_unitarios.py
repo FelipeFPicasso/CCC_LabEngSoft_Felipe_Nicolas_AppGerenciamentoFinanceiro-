@@ -9,9 +9,8 @@ from Models.cartao_model import Cartao
 from Models.limite_model import Limite
 
 
-# ==================================================
 # USUARIO MODEL
-# ==================================================
+
 
 def test_usuario_instancia():
     usuario = Usuario(
